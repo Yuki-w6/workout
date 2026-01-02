@@ -1,43 +1,89 @@
-//
-//  workoutUITests.swift
-//  workoutUITests
-//
-//  Created by 間山友喜 on 2026/01/01.
-//
-
 import XCTest
 
-final class workoutUITests: XCTestCase {
+final class ExerciseUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+    func testExerciseGetListShowsSeedExercises() throws {
+        let app = launchApp()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Bench Press"].exists)
+        XCTAssertTrue(app.staticTexts["Deadlift"].exists)
+        XCTAssertTrue(app.staticTexts["Squat"].exists)
+    }
+
+    @MainActor
+    func testExerciseGetShowsDetail() throws {
+        let app = launchApp()
+
+        app.staticTexts["Bench Press"].tap()
+        XCTAssertTrue(app.navigationBars["Exercise"].waitForExistence(timeout: 2))
+        XCTAssertEqual(app.staticTexts["ExerciseName"].label, "Bench Press")
+    }
+
+    @MainActor
+    func testExerciseAddCreatesNewExercise() throws {
+        let app = launchApp()
+
+        app.navigationBars["Home"].buttons["Add"].tap()
+        XCTAssertTrue(app.staticTexts["New Exercise"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testExerciseEditUpdatesName() throws {
+        let app = launchApp()
+
+        app.staticTexts["Bench Press"].tap()
+        app.navigationBars["Exercise"].buttons["Edit"].tap()
+
+        let nameField = app.textFields["Exercise Name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+        nameField.clearAndEnterText("Bench Press Updated")
+        app.navigationBars["Edit Exercise"].buttons["Save"].tap()
+
+        XCTAssertTrue(app.staticTexts["Bench Press Updated"].waitForExistence(timeout: 2))
+        app.navigationBars["Exercise"].buttons["Home"].tap()
+        XCTAssertTrue(app.staticTexts["Bench Press Updated"].exists)
+    }
+
+    @MainActor
+    func testExerciseDeleteRemovesExercise() throws {
+        let app = launchApp()
+
+        let target = app.staticTexts["Deadlift"]
+        XCTAssertTrue(target.waitForExistence(timeout: 2))
+        target.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        XCTAssertFalse(app.staticTexts["Deadlift"].exists)
     }
 
     @MainActor
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
-            // This measures how long it takes to launch your application.
             measure(metrics: [XCTApplicationLaunchMetric()]) {
                 XCUIApplication().launch()
             }
         }
+    }
+
+    @MainActor
+    private func launchApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launch()
+        return app
+    }
+}
+
+private extension XCUIElement {
+    func clearAndEnterText(_ text: String) {
+        tap()
+        let currentValue = value as? String ?? ""
+        let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: currentValue.count)
+        typeText(deleteString)
+        typeText(text)
     }
 }

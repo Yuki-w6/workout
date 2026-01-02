@@ -4,7 +4,7 @@ import Testing
 @testable import workout
 
 struct ExerciseTests {
-    @Test func createExercise() throws {
+    @Test func addExercise() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -16,7 +16,7 @@ struct ExerciseTests {
         #expect(exercises.count == 1)
     }
 
-    @Test func readExercise() throws {
+    @Test func getExercise() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -31,7 +31,7 @@ struct ExerciseTests {
         #expect(fetched.first?.name == "Squat")
     }
 
-    @Test func updateExercise() throws {
+    @Test func editExercise() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -62,5 +62,17 @@ struct ExerciseTests {
 
         let exercises = try context.fetch(FetchDescriptor<Exercise>())
         #expect(exercises.isEmpty)
+    }
+
+    @Test func getExerciseList() throws {
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+
+        context.insert(Exercise(name: "Bench Press", bodyPart: .chest))
+        context.insert(Exercise(name: "Overhead Press", bodyPart: .shoulders))
+        try context.save()
+
+        let exercises = try context.fetch(FetchDescriptor<Exercise>())
+        #expect(exercises.count == 2)
     }
 }

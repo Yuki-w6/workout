@@ -18,7 +18,7 @@ struct RecordTests {
         return header
     }
 
-    @Test func createRecordHeader() throws {
+    @Test func addRecordHeader() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -31,7 +31,7 @@ struct RecordTests {
         #expect(headers.count == 1)
     }
 
-    @Test func readRecordHeader() throws {
+    @Test func getRecordHeader() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -47,7 +47,7 @@ struct RecordTests {
         #expect(fetched.first?.exercise.name == "Deadlift")
     }
 
-    @Test func updateRecordHeader() throws {
+    @Test func editRecordHeader() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -84,7 +84,7 @@ struct RecordTests {
         #expect(headers.isEmpty)
     }
 
-    @Test func createRecordDetail() throws {
+    @Test func addRecordDetail() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -104,7 +104,7 @@ struct RecordTests {
         #expect(details.count == 1)
     }
 
-    @Test func readRecordDetail() throws {
+    @Test func getRecordDetail() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -127,7 +127,7 @@ struct RecordTests {
         #expect(fetched.first?.weight == 80.0)
     }
 
-    @Test func updateRecordDetail() throws {
+    @Test func editRecordDetail() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
@@ -179,5 +179,44 @@ struct RecordTests {
 
         let details = try context.fetch(FetchDescriptor<RecordDetail>())
         #expect(details.isEmpty)
+    }
+
+    @Test func getRecordHeaderList() throws {
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+
+        let exercise = try makeExercise(context: context)
+        context.insert(RecordHeader(date: Date(), exercise: exercise))
+        context.insert(RecordHeader(date: Date().addingTimeInterval(-3600), exercise: exercise))
+        try context.save()
+
+        let headers = try context.fetch(FetchDescriptor<RecordHeader>())
+        #expect(headers.count == 2)
+    }
+
+    @Test func getRecordDetailList() throws {
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+
+        let exercise = try makeExercise(context: context)
+        let header = try makeHeader(context: context, exercise: exercise)
+        context.insert(RecordDetail(
+            header: header,
+            setNumber: 1,
+            weight: 60.0,
+            weightUnit: .kilogram,
+            repetitions: 5
+        ))
+        context.insert(RecordDetail(
+            header: header,
+            setNumber: 2,
+            weight: 60.0,
+            weightUnit: .kilogram,
+            repetitions: 5
+        ))
+        try context.save()
+
+        let details = try context.fetch(FetchDescriptor<RecordDetail>())
+        #expect(details.count == 2)
     }
 }
