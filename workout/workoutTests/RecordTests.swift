@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 import Testing
 @testable import workout
@@ -39,8 +40,9 @@ struct RecordTests {
         context.insert(header)
         try context.save()
 
+        let headerID = header.id
         let fetched = try context.fetch(
-            FetchDescriptor<RecordHeader>(predicate: #Predicate { $0.id == header.id })
+            FetchDescriptor<RecordHeader>(predicate: #Predicate<RecordHeader> { $0.id == headerID })
         )
         #expect(fetched.first?.exercise.name == "Deadlift")
     }
@@ -59,8 +61,9 @@ struct RecordTests {
         header.menu = nil
         try context.save()
 
+        let headerID = header.id
         let fetched = try context.fetch(
-            FetchDescriptor<RecordHeader>(predicate: #Predicate { $0.id == header.id })
+            FetchDescriptor<RecordHeader>(predicate: #Predicate<RecordHeader> { $0.id == headerID })
         )
         #expect(fetched.first?.menu == nil)
     }
@@ -117,8 +120,9 @@ struct RecordTests {
         context.insert(detail)
         try context.save()
 
+        let detailID = detail.id
         let fetched = try context.fetch(
-            FetchDescriptor<RecordDetail>(predicate: #Predicate { $0.id == detail.id })
+            FetchDescriptor<RecordDetail>(predicate: #Predicate<RecordDetail> { $0.id == detailID })
         )
         #expect(fetched.first?.weight == 80.0)
     }
@@ -145,8 +149,9 @@ struct RecordTests {
         detail.memo = nil
         try context.save()
 
+        let detailID = detail.id
         let fetched = try context.fetch(
-            FetchDescriptor<RecordDetail>(predicate: #Predicate { $0.id == detail.id })
+            FetchDescriptor<RecordDetail>(predicate: #Predicate<RecordDetail> { $0.id == detailID })
         )
         #expect(fetched.first?.weight == 42.5)
         #expect(fetched.first?.repetitions == 6)

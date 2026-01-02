@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 import Testing
 @testable import workout
@@ -27,8 +28,9 @@ struct MenuTests {
         context.insert(menu)
         try context.save()
 
+        let menuID = menu.id
         let fetched = try context.fetch(
-            FetchDescriptor<Menu>(predicate: #Predicate { $0.id == menu.id })
+            FetchDescriptor<Menu>(predicate: #Predicate<Menu> { $0.id == menuID })
         )
         #expect(fetched.first?.exercises.count == 1)
     }
@@ -46,8 +48,9 @@ struct MenuTests {
         menu.name = "Lower Body Day"
         try context.save()
 
+        let menuID = menu.id
         let fetched = try context.fetch(
-            FetchDescriptor<Menu>(predicate: #Predicate { $0.id == menu.id })
+            FetchDescriptor<Menu>(predicate: #Predicate<Menu> { $0.id == menuID })
         )
         #expect(fetched.first?.name == "Lower Body Day")
     }
