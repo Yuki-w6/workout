@@ -25,8 +25,23 @@ final class AppContainer {
         guard exerciseRepository.fetchAll().isEmpty else {
             return
         }
-        _ = exerciseRepository.addExercise(name: "Bench Press", bodyPart: .chest)
-        _ = exerciseRepository.addExercise(name: "Deadlift", bodyPart: .back)
-        _ = exerciseRepository.addExercise(name: "Squat", bodyPart: .legs)
+        let presets: [(name: String, bodyPart: BodyPart)] = [
+            ("ベンチプレス", .chest),
+            ("チェストプレス", .chest),
+            ("デットリフト", .back),
+            ("ラットプルダウン", .back),
+            ("スクワット", .legs),
+            ("レッグプレス", .legs),
+            ("ショルダープレス", .shoulders),
+            ("サイドレイズ", .shoulders),
+            ("リアレイズ", .shoulders),
+            ("アームカール", .arms),
+            ("ヒップスラスト", .glutes),
+            ("アブドミナル", .core)
+        ]
+
+        for preset in presets {
+            _ = exerciseRepository.addExercise(name: preset.name, bodyPart: preset.bodyPart)
+        }
     }
 }

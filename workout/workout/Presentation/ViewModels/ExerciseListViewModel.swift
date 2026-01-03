@@ -35,9 +35,8 @@ final class ExerciseListViewModel: ObservableObject {
         fetchExerciseUseCase.execute(id: id)
     }
 
-    func addSampleExercise() {
-        let bodyPart = BodyPart.allCases.randomElement() ?? .fullBody
-        _ = addExercise.execute(name: "New Exercise", bodyPart: bodyPart)
+    func addExercise(bodyPart: BodyPart) {
+        _ = addExercise.execute(name: "新しい種目", bodyPart: bodyPart)
         load()
     }
 

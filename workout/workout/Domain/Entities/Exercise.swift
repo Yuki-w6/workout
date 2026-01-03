@@ -9,7 +9,6 @@ enum BodyPart: String, Codable, CaseIterable {
     case arms
     case glutes
     case core
-    case fullBody
 }
 
 enum WeightUnit: String, Codable, CaseIterable {
@@ -51,8 +50,6 @@ extension BodyPart {
             return "お尻"
         case .core:
             return "お腹"
-        case .fullBody:
-            return "全身"
         }
     }
 }
