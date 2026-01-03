@@ -30,6 +30,15 @@ final class InMemoryExerciseRepository: ExerciseRepository {
         return exercises[index]
     }
 
+    func updateExerciseRecord(id: UUID, unit: WeightUnit, sets: [ExerciseSet]) -> Exercise? {
+        guard let index = exercises.firstIndex(where: { $0.id == id }) else {
+            return nil
+        }
+        exercises[index].weightUnit = unit
+        exercises[index].sets = sets
+        return exercises[index]
+    }
+
     func deleteExercise(id: UUID) -> Bool {
         guard let index = exercises.firstIndex(where: { $0.id == id }) else {
             return false

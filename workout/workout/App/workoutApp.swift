@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct workoutApp: App {
@@ -12,9 +13,11 @@ struct workoutApp: App {
                 fetchExercise: FetchExerciseUseCase(repository: repository),
                 addExercise: AddExerciseUseCase(repository: repository),
                 updateExercise: UpdateExerciseUseCase(repository: repository),
+                updateExerciseRecord: UpdateExerciseRecordUseCase(repository: repository),
                 deleteExercise: DeleteExerciseUseCase(repository: repository)
             )
             ContentView(viewModel: viewModel)
+                .modelContainer(container.modelContainer)
         }
     }
 }

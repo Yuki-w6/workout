@@ -4,6 +4,7 @@ import SwiftData
 func makeTestContainer() throws -> ModelContainer {
     let schema = Schema([
         Exercise.self,
+        ExerciseSet.self,
         Menu.self,
         RecordHeader.self,
         RecordDetail.self,

@@ -1,11 +1,6 @@
 import Foundation
 import SwiftData
 
-enum WeightUnit: String, Codable, CaseIterable {
-    case kilogram
-    case pound
-}
-
 @Model
 final class RecordDetail {
     @Attribute(.unique) var id: UUID

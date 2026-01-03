@@ -94,7 +94,7 @@ struct RecordTests {
             header: header,
             setNumber: 1,
             weight: 60.0,
-            weightUnit: .kilogram,
+            weightUnit: .kg,
             repetitions: 5
         )
         context.insert(detail)
@@ -114,7 +114,7 @@ struct RecordTests {
             header: header,
             setNumber: 1,
             weight: 80.0,
-            weightUnit: .kilogram,
+            weightUnit: .kg,
             repetitions: 3
         )
         context.insert(detail)
@@ -137,7 +137,7 @@ struct RecordTests {
             header: header,
             setNumber: 1,
             weight: 40.0,
-            weightUnit: .kilogram,
+            weightUnit: .kg,
             repetitions: 8,
             memo: "Controlled"
         )
@@ -168,7 +168,7 @@ struct RecordTests {
             header: header,
             setNumber: 1,
             weight: 70.0,
-            weightUnit: .kilogram,
+            weightUnit: .kg,
             repetitions: 4
         )
         context.insert(detail)
@@ -204,14 +204,14 @@ struct RecordTests {
             header: header,
             setNumber: 1,
             weight: 60.0,
-            weightUnit: .kilogram,
+            weightUnit: .kg,
             repetitions: 5
         ))
         context.insert(RecordDetail(
             header: header,
             setNumber: 2,
             weight: 60.0,
-            weightUnit: .kilogram,
+            weightUnit: .kg,
             repetitions: 5
         ))
         try context.save()
