@@ -8,7 +8,7 @@ struct RecordListView: View {
     @State private var displayedMonth = Date()
     @Environment(\.modelContext) private var modelContext
 
-    private let calendar = Calendar.current
+    private let calendar = Calendar.japaneseLocale
 
     private var markedDates: Set<Date> {
         Set(records.map { calendar.startOfDay(for: $0.date) })
@@ -129,7 +129,9 @@ struct RecordListView: View {
 
     private func monthTitle(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM"
+        formatter.calendar = calendar
+        formatter.locale = calendar.locale
+        formatter.dateFormat = "yyyy年M月"
         return formatter.string(from: date)
     }
 }
@@ -139,7 +141,7 @@ private struct CalendarMonthView: View {
     @Binding var selectedDate: Date
     let markedDates: Set<Date>
 
-    private let calendar = Calendar.current
+    private let calendar = Calendar.japaneseLocale
 
     private var days: [Date?] {
         guard
@@ -205,5 +207,13 @@ private struct CalendarMonthView: View {
             return symbols
         }
         return Array(symbols[shift...]) + symbols[..<shift]
+    }
+}
+
+private extension Calendar {
+    static var japaneseLocale: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "ja_JP")
+        return calendar
     }
 }

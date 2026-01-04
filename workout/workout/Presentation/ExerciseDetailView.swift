@@ -18,7 +18,7 @@ struct ExerciseDetailView: View {
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
 
-    private let calendar = Calendar.current
+    private let calendar = Calendar.japaneseLocale
     private static let recordDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -62,6 +62,8 @@ struct ExerciseDetailView: View {
                             displayedComponents: .date
                         )
                         .datePickerStyle(.compact)
+                        .environment(\.calendar, calendar)
+                        .environment(\.locale, calendar.locale ?? .current)
                         .labelsHidden()
                         .opacity(0.02)
                         .accessibilityLabel("日付")
@@ -85,6 +87,7 @@ struct ExerciseDetailView: View {
                                 .focused($focusedField, equals: .weight(index))
                             Text(unit.rawValue)
                                 .foregroundStyle(.secondary)
+                                .frame(width: 28, alignment: .leading)
                             TextField("回数", text: $set.reps)
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
@@ -200,7 +203,7 @@ struct ExerciseDetailView: View {
             let normalized = calendar.startOfDay(for: baseDate)
             recordDate = normalized
             lastLoadedDate = normalized
-            loadRecord(for: normalized)
+            loadRecord(for: normalized, focusAfterLoad: true)
         }
         .onChange(of: recordDate) { _, newValue in
             handleRecordDateChange(to: newValue)
@@ -210,7 +213,7 @@ struct ExerciseDetailView: View {
         }
     }
 
-    private func loadRecord(for date: Date) {
+    private func loadRecord(for date: Date, focusAfterLoad: Bool) {
         guard let exercise = fetchExerciseForRecord() else {
             return
         }
@@ -225,11 +228,15 @@ struct ExerciseDetailView: View {
             if sets.last.map(isEmptySet) != true {
                 sets.append(ExerciseSetInput())
             }
-            setInitialFocus(toLastSet: true)
+            if focusAfterLoad {
+                setInitialFocus(toLastSet: true)
+            }
         } else {
             unit = WeightUnit(rawValue: lastWeightUnitRaw) ?? exercise.weightUnit
             sets = ExerciseSetInput.defaultSets()
-            setInitialFocus(toLastSet: false)
+            if focusAfterLoad {
+                setInitialFocus(toLastSet: false)
+            }
         }
     }
 
@@ -246,7 +253,8 @@ struct ExerciseDetailView: View {
         guard normalized != lastLoadedDate else {
             return
         }
-        loadRecord(for: normalized)
+        focusedField = nil
+        loadRecord(for: normalized, focusAfterLoad: false)
         lastLoadedDate = normalized
     }
 
@@ -287,6 +295,14 @@ struct ExerciseDetailView: View {
             return
         }
         focusedField = focusableFields[previousIndex]
+    }
+}
+
+private extension Calendar {
+    static var japaneseLocale: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "ja_JP")
+        return calendar
     }
 }
 

@@ -62,6 +62,13 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
         guard let exercise = fetch(id: id) else {
             return false
         }
+        var recordDescriptor = FetchDescriptor<RecordHeader>(
+            predicate: #Predicate { $0.exercise.id == id }
+        )
+        recordDescriptor.fetchLimit = 1
+        if let existing = try? modelContext.fetch(recordDescriptor), !existing.isEmpty {
+            return false
+        }
         modelContext.delete(exercise)
         save()
         return true

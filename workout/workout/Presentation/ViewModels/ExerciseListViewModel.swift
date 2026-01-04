@@ -35,8 +35,8 @@ final class ExerciseListViewModel: ObservableObject {
         fetchExerciseUseCase.execute(id: id)
     }
 
-    func addExercise(bodyPart: BodyPart) {
-        _ = addExercise.execute(name: "新しい種目", bodyPart: bodyPart)
+    func addExercise(name: String, bodyPart: BodyPart) {
+        _ = addExercise.execute(name: name, bodyPart: bodyPart)
         load()
     }
 
@@ -50,17 +50,22 @@ final class ExerciseListViewModel: ObservableObject {
         load()
     }
 
-    func deleteExercises(at offsets: IndexSet) {
+    func deleteExercises(at offsets: IndexSet) -> [UUID] {
         let ids = offsets.compactMap { index in
             exercises.indices.contains(index) ? exercises[index].id : nil
         }
-        deleteExercises(ids: ids)
+        return deleteExercises(ids: ids)
     }
 
-    func deleteExercises(ids: [UUID]) {
+    func deleteExercises(ids: [UUID]) -> [UUID] {
+        var failedIds: [UUID] = []
         for id in ids {
-            _ = deleteExerciseUseCase.execute(id: id)
+            let deleted = deleteExerciseUseCase.execute(id: id)
+            if !deleted {
+                failedIds.append(id)
+            }
         }
         load()
+        return failedIds
     }
 }
