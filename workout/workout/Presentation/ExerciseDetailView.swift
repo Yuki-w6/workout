@@ -382,7 +382,6 @@ private extension ExerciseDetailView {
             return
         }
         let targetDate = calendar.startOfDay(for: date)
-        let targetID = exerciseID
         if trimmedSets.isEmpty {
             if let existing = fetchRecordHeader(for: targetDate) {
                 modelContext.delete(existing)

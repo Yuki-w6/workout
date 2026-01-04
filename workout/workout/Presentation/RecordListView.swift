@@ -95,7 +95,6 @@ struct RecordListView: View {
                 }
                 .listStyle(.insetGrouped)
             }
-            .navigationTitle("History")
         }
     }
 

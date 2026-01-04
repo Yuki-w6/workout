@@ -16,8 +16,13 @@ struct ContentView: View {
                 }
             RecordListView(viewModel: viewModel)
                 .tabItem {
-                    Image(systemName: "clock.arrow.circlepath")
+                    Image(systemName: "calendar")
                         .accessibilityLabel("履歴")
+                }
+            GraphView(viewModel: viewModel)
+                .tabItem {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .accessibilityLabel("グラフ")
                 }
         }
     }
