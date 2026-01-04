@@ -16,6 +16,7 @@ struct ExerciseDetailView: View {
     @State private var recordDate = Date()
     @State private var lastLoadedDate = Date()
     @State private var originalRecordDate: Date?
+    @State private var showNoPredictionAlert = false
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
 
@@ -27,6 +28,14 @@ struct ExerciseDetailView: View {
         formatter.dateFormat = "yyyy/MM/dd"
         return formatter
     }()
+    private static let weightFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 1
+        return formatter
+    }()
+    private let predictor = ExerciseRecordPredictor()
 
     private enum FocusField: Hashable {
         case weight(Int)
@@ -120,7 +129,18 @@ struct ExerciseDetailView: View {
                 }
             } header: {
                 HStack {
-                    Text("セット")
+                    HStack(spacing: 8) {
+                        Text("セット")
+                        Button("AI入力") {
+                            applyPrediction()
+                        }
+                        .accessibilityLabel("AI入力")
+                        .font(.body)
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .padding(.leading, 4)
+                        .tint(.primary)
+                    }
                     Spacer()
                     Picker("単位", selection: $unit) {
                         ForEach(WeightUnit.allCases, id: \.self) { unit in
@@ -198,6 +218,11 @@ struct ExerciseDetailView: View {
                     }
                 }
             }
+        }
+        .alert("AI入力", isPresented: $showNoPredictionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("過去に記録がないため、数値を予測することができませんでした。")
         }
         .onAppear {
             let baseDate = initialDate ?? Date()
@@ -450,6 +475,44 @@ private extension ExerciseDetailView {
         )
         descriptor.fetchLimit = 1
         return (try? modelContext.fetch(descriptor))?.first
+    }
+
+    func fetchPastRecordHeaders(before date: Date) -> [RecordHeader] {
+        let targetDate = calendar.startOfDay(for: date)
+        let descriptor = FetchDescriptor<RecordHeader>(
+            predicate: #Predicate { $0.exercise.id == exerciseID && $0.date < targetDate },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    func applyPrediction() {
+        let pastRecords = fetchPastRecordHeaders(before: recordDate)
+        let predictions = predictor.predict(records: pastRecords, unit: unit)
+        guard !predictions.isEmpty else {
+            showNoPredictionAlert = true
+            return
+        }
+
+        var updatedSets = sets
+        for index in updatedSets.indices {
+            let setNumber = index + 1
+            guard let prediction = predictions[setNumber] else {
+                continue
+            }
+            if updatedSets[index].weight.isEmpty, let weight = prediction.weight {
+                updatedSets[index].weight = formatWeight(weight)
+            }
+            if updatedSets[index].reps.isEmpty, let reps = prediction.reps {
+                updatedSets[index].reps = String(reps)
+            }
+        }
+        sets = updatedSets
+    }
+
+    func formatWeight(_ weight: Double) -> String {
+        let number = NSNumber(value: weight)
+        return Self.weightFormatter.string(from: number) ?? String(format: "%.1f", weight)
     }
 
     func saveContext() {
