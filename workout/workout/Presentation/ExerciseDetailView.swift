@@ -15,6 +15,7 @@ struct ExerciseDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var recordDate = Date()
     @State private var lastLoadedDate = Date()
+    @State private var originalRecordDate: Date?
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
 
@@ -203,6 +204,7 @@ struct ExerciseDetailView: View {
             let normalized = calendar.startOfDay(for: baseDate)
             recordDate = normalized
             lastLoadedDate = normalized
+            originalRecordDate = isNewRecord ? nil : normalized
             loadRecord(for: normalized, focusAfterLoad: true)
         }
         .onChange(of: recordDate) { _, newValue in
@@ -251,6 +253,10 @@ struct ExerciseDetailView: View {
     private func handleRecordDateChange(to newDate: Date) {
         let normalized = calendar.startOfDay(for: newDate)
         guard normalized != lastLoadedDate else {
+            return
+        }
+        if !isNewRecord {
+            lastLoadedDate = normalized
             return
         }
         focusedField = nil
@@ -382,11 +388,17 @@ private extension ExerciseDetailView {
             return
         }
         let targetDate = calendar.startOfDay(for: date)
+        let originalDate = originalRecordDate.map { calendar.startOfDay(for: $0) }
         if trimmedSets.isEmpty {
             if let existing = fetchRecordHeader(for: targetDate) {
                 modelContext.delete(existing)
             }
+            if !isNewRecord, let originalDate, originalDate != targetDate,
+               let originalHeader = fetchRecordHeader(for: originalDate) {
+                modelContext.delete(originalHeader)
+            }
             saveContext()
+            originalRecordDate = nil
             return
         }
 
@@ -415,7 +427,12 @@ private extension ExerciseDetailView {
             modelContext.insert(detail)
         }
         header.details = details
+        if !isNewRecord, let originalDate, originalDate != targetDate,
+           let originalHeader = fetchRecordHeader(for: originalDate) {
+            modelContext.delete(originalHeader)
+        }
         saveContext()
+        originalRecordDate = targetDate
     }
 
     func fetchExerciseForRecord() -> Exercise? {

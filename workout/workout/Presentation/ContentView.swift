@@ -11,18 +11,24 @@ struct ContentView: View {
         TabView {
             ExerciseListView(viewModel: viewModel)
                 .tabItem {
-                    Image(systemName: "house")
-                        .accessibilityLabel("ホーム")
+                    VStack(spacing: 2) {
+                        Image(systemName: "house")
+                        Text("ホーム")
+                    }
                 }
             RecordListView(viewModel: viewModel)
                 .tabItem {
-                    Image(systemName: "calendar")
-                        .accessibilityLabel("履歴")
+                    VStack(spacing: 2) {
+                        Image(systemName: "calendar")
+                        Text("記録")
+                    }
                 }
             GraphView(viewModel: viewModel)
                 .tabItem {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .accessibilityLabel("グラフ")
+                    VStack(spacing: 2) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                        Text("グラフ")
+                    }
                 }
         }
     }
