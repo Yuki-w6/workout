@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ExerciseDetailView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
@@ -17,6 +18,7 @@ struct ExerciseDetailView: View {
     @State private var lastLoadedDate = Date()
     @State private var originalRecordDate: Date?
     @State private var showNoPredictionAlert = false
+    @State private var scrollToSetIndex: Int?
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
 
@@ -57,105 +59,41 @@ struct ExerciseDetailView: View {
         }
     }
 
+    private var focusableFieldsWithoutMemo: [FocusField] {
+        sets.indices.flatMap { index in
+            [.weight(index), .reps(index)]
+        }
+    }
+
     var body: some View {
-        List {
-            Section("日付") {
-                HStack {
-                    Spacer()
-                    ZStack(alignment: .trailing) {
-                        DatePicker(
-                            "",
-                            selection: Binding(
-                                get: { recordDate },
-                                set: { recordDate = calendar.startOfDay(for: $0) }
-                            ),
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.compact)
-                        .environment(\.calendar, calendar)
-                        .environment(\.locale, calendar.locale ?? .current)
-                        .labelsHidden()
-                        .opacity(0.02)
-                        .accessibilityLabel("日付")
-                        Text(formattedRecordDate)
-                            .monospacedDigit()
-                            .allowsHitTesting(false)
-                    }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    dateSection
+                    setsSection
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
-            Section {
-                ForEach(Array($sets.enumerated()), id: \.element.id) { index, $set in
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 16) {
-                            TextField("重さ", text: $set.weight)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(minWidth: 72)
-                                .recordInputStyle()
-                                .submitLabel(.next)
-                                .onSubmit { focusNextField() }
-                                .focused($focusedField, equals: .weight(index))
-                            Text(unit.rawValue)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 28, alignment: .leading)
-                            TextField("回数", text: $set.reps)
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(minWidth: 72)
-                                .recordInputStyle()
-                                .submitLabel(.next)
-                                .onSubmit { focusNextField() }
-                                .focused($focusedField, equals: .reps(index))
-                            Text("回")
-                                .foregroundStyle(.secondary)
-                        }
-                        TextField("メモ", text: $set.memo)
-                            .textInputAutocapitalization(.never)
-                            .recordInputStyle()
-                            .submitLabel(.next)
-                            .onSubmit { focusNextField() }
-                            .focused($focusedField, equals: .memo(index))
-                    }
-                    .padding(.vertical, 6)
+            .background(Color(.systemGroupedBackground))
+            .onChange(of: scrollToSetIndex) {
+                guard let index = scrollToSetIndex else {
+                    return
                 }
-                Button {
-                    sets.append(ExerciseSetInput())
-                    let newIndex = max(sets.count - 1, 0)
-                    DispatchQueue.main.async {
-                        focusedField = .weight(newIndex)
+                let delay = 0.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation {
+                        proxy.scrollTo(setRowID(index), anchor: .center)
                     }
-                } label: {
-                    Label("セットを追加", systemImage: "plus")
                 }
-            } header: {
-                HStack {
-                    HStack(spacing: 8) {
-                        Text("セット")
-                        Button("AI入力") {
-                            applyPrediction()
-                        }
-                        .accessibilityLabel("AI入力")
-                        .font(.body)
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .padding(.leading, 4)
-                        .tint(.primary)
-                    }
-                    Spacer()
-                    Picker("単位", selection: $unit) {
-                        ForEach(WeightUnit.allCases, id: \.self) { unit in
-                            Text(unit.rawValue.lowercased())
-                                .textCase(.none)
-                                .tag(unit)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 140)
-                    .textCase(.none)
-                }
+                scrollToSetIndex = nil
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onChange(of: focusedField) {
+            selectAllIfNeeded(for: focusedField)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
@@ -178,6 +116,11 @@ struct ExerciseDetailView: View {
                 .accessibilityLabel("記録を保存")
             }
             ToolbarItemGroup(placement: .keyboard) {
+                Button("AI入力") {
+                    applyPrediction()
+                }
+                .accessibilityLabel("AI入力")
+                .keyboardButtonStyle()
                 Spacer()
                 Button("<") {
                     focusPreviousField()
@@ -297,35 +240,198 @@ struct ExerciseDetailView: View {
     }
 
     private func focusNextField() {
-        guard !focusableFields.isEmpty else {
+        let fields = fieldsForNavigation(from: focusedField)
+        guard !fields.isEmpty else {
             return
         }
         guard let current = focusedField,
-              let index = focusableFields.firstIndex(of: current) else {
-            focusedField = focusableFields.first
+              let index = fields.firstIndex(of: current) else {
+            focusedField = fields.first
             return
         }
         let nextIndex = index + 1
-        if nextIndex < focusableFields.count {
-            focusedField = focusableFields[nextIndex]
+        if nextIndex < fields.count {
+            let nextField = fields[nextIndex]
+            if focusedSetIndex(from: nextField) != focusedSetIndex(from: current) {
+                scrollToSetIndex = focusedSetIndex(from: nextField)
+            }
+            focusedField = nextField
             return
         }
         sets.append(ExerciseSetInput())
         DispatchQueue.main.async {
-            focusedField = .weight(max(sets.count - 1, 0))
+            let newIndex = max(sets.count - 1, 0)
+            focusedField = .weight(newIndex)
+            scrollToSetIndex = newIndex
         }
     }
 
     private func focusPreviousField() {
+        let fields = fieldsForNavigation(from: focusedField)
         guard let current = focusedField,
-              let index = focusableFields.firstIndex(of: current) else {
+              let index = fields.firstIndex(of: current) else {
             return
         }
         let previousIndex = index - 1
         guard previousIndex >= 0 else {
             return
         }
-        focusedField = focusableFields[previousIndex]
+        let previousField = fields[previousIndex]
+        if focusedSetIndex(from: previousField) != focusedSetIndex(from: current) {
+            scrollToSetIndex = focusedSetIndex(from: previousField)
+        }
+        focusedField = previousField
+    }
+
+    private func focusedSetIndex(from focusField: FocusField) -> Int {
+        switch focusField {
+        case .weight(let index), .reps(let index), .memo(let index):
+            return index
+        }
+    }
+
+    private func setRowID(_ index: Int) -> String {
+        "set-row-\(index)"
+    }
+
+    private func fieldsForNavigation(from focusField: FocusField?) -> [FocusField] {
+        guard let focusField else {
+            return focusableFieldsWithoutMemo
+        }
+        switch focusField {
+        case .memo:
+            return focusableFields
+        case .weight, .reps:
+            return focusableFieldsWithoutMemo
+        }
+    }
+
+    private func selectAllIfNeeded(for focusField: FocusField?) {
+        guard let focusField else {
+            return
+        }
+        switch focusField {
+        case .weight, .reps:
+            DispatchQueue.main.async {
+                UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+            }
+        case .memo:
+            break
+        }
+    }
+
+}
+
+private extension ExerciseDetailView {
+    var dateSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("日付")
+                .font(.headline)
+            HStack {
+                Spacer()
+                ZStack(alignment: .trailing) {
+                    DatePicker(
+                        "",
+                        selection: Binding(
+                            get: { recordDate },
+                            set: { recordDate = calendar.startOfDay(for: $0) }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+                    .environment(\.calendar, calendar)
+                    .environment(\.locale, calendar.locale ?? .current)
+                    .labelsHidden()
+                    .opacity(0.02)
+                    .accessibilityLabel("日付")
+                    Text(formattedRecordDate)
+                        .monospacedDigit()
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(Capsule())
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+
+    var setsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("セット")
+                    .font(.headline)
+                Spacer()
+                Picker("単位", selection: $unit) {
+                    ForEach(WeightUnit.allCases, id: \.self) { unit in
+                        Text(unit.rawValue.lowercased())
+                            .textCase(.none)
+                            .tag(unit)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 140)
+                .textCase(.none)
+            }
+            .padding(.horizontal, 4)
+            VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array($sets.enumerated()), id: \.element.id) { index, $set in
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("セット \(index + 1)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 16) {
+                        TextField("重さ", text: $set.weight)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(minWidth: 72)
+                            .recordInputStyle()
+                            .submitLabel(.next)
+                            .onSubmit { focusNextField() }
+                            .focused($focusedField, equals: .weight(index))
+                        Text(unit.rawValue)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, alignment: .leading)
+                        TextField("回数", text: $set.reps)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(minWidth: 72)
+                            .recordInputStyle()
+                            .submitLabel(.next)
+                            .onSubmit { focusNextField() }
+                            .focused($focusedField, equals: .reps(index))
+                        Text("回")
+                            .foregroundStyle(.secondary)
+                    }
+                    TextField("メモ", text: $set.memo)
+                        .textInputAutocapitalization(.never)
+                        .recordInputStyle()
+                        .submitLabel(.next)
+                        .onSubmit { focusNextField() }
+                        .focused($focusedField, equals: .memo(index))
+                }
+                .padding(.vertical, 6)
+                .id(setRowID(index))
+                if index < sets.count - 1 {
+                    Divider()
+                }
+            }
+            Button {
+                sets.append(ExerciseSetInput())
+                let newIndex = max(sets.count - 1, 0)
+                DispatchQueue.main.async {
+                    focusedField = .weight(newIndex)
+                }
+            } label: {
+                Label("セットを追加", systemImage: "plus")
+            }
+            .padding(.top, 4)
+            }
+            .padding(12)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
     }
 }
 
@@ -389,8 +495,8 @@ private struct KeyboardButtonModifier: ViewModifier {
         content
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isEmphasized ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground))
-            .clipShape(Capsule())
+            .foregroundStyle(isEmphasized ? Color.accentColor : Color.primary)
+            .frame(height: 32)
     }
 }
 
@@ -488,7 +594,7 @@ private extension ExerciseDetailView {
 
     func applyPrediction() {
         let pastRecords = fetchPastRecordHeaders(before: recordDate)
-        let predictions = predictor.predict(records: pastRecords, unit: unit)
+        let predictions = predictor.predict(records: pastRecords, unit: unit, maxSetNumber: sets.count)
         guard !predictions.isEmpty else {
             showNoPredictionAlert = true
             return
