@@ -10,6 +10,8 @@ struct GraphView: View {
     @State private var selectedPeriod: GraphPeriod = .oneWeek
     @State private var selectedMetric: GraphMetric = .totalLoad
     @State private var selectedMetricPoint: MetricPoint?
+    @State private var selectedDate: Date?
+    @State private var hasAutoSelectedInitialPoint = false
     @State private var valueLabelSize: CGSize = .zero
     @State private var chartScrollPosition: Date = Date()
     @AppStorage("lastGraphMetric") private var lastGraphMetricRaw = GraphMetric.totalLoad.rawValue
@@ -42,8 +44,8 @@ struct GraphView: View {
             viewModel.load()
             syncExerciseSelection()
             selectedMetric = GraphMetric(rawValue: lastGraphMetricRaw) ?? .totalLoad
-            updateSelectedMetricPoint()
-            chartScrollPosition = scrollTargetDate(for: selectedPeriod)
+            updateSelectedMetricPoint(autoSelect: true)
+            updateChartScrollPosition()
         }
         .onChange(of: selectedBodyPart) { _, _ in
             syncExerciseSelection()
@@ -52,18 +54,20 @@ struct GraphView: View {
             syncExerciseSelection()
         }
         .onChange(of: selectedExerciseId) { _, _ in
-            updateSelectedMetricPoint()
+            updateSelectedMetricPoint(autoSelect: false)
+            updateChartScrollPosition()
         }
         .onChange(of: selectedPeriod) { _, _ in
-            updateSelectedMetricPoint()
-            chartScrollPosition = chartScrollPosition
+            updateSelectedMetricPoint(autoSelect: false)
+            updateChartScrollPosition()
         }
         .onChange(of: records.count) { _, _ in
-            updateSelectedMetricPoint()
+            updateSelectedMetricPoint(autoSelect: false)
+            updateChartScrollPosition()
         }
         .onChange(of: selectedMetric) { _, newValue in
             lastGraphMetricRaw = newValue.rawValue
-            updateSelectedMetricPoint()
+            updateSelectedMetricPoint(autoSelect: false)
         }
         .onChange(of: selectedMetricPoint) { _, _ in
             valueLabelSize = .zero
@@ -155,8 +159,9 @@ struct GraphView: View {
                 chartBlock(
                     title: selectedMetric.title,
                     points: points(for: selectedMetric, in: metrics),
-                    range: periodRange,
-                    selectedPoint: $selectedMetricPoint
+                    range: chartDataRange,
+                    selectedPoint: $selectedMetricPoint,
+                    selectedDate: $selectedDate
                 )
             }
         }
@@ -176,15 +181,35 @@ struct GraphView: View {
         return start...end
     }
 
+    private var chartDataRange: ClosedRange<Date> {
+        guard let recordRange = recordRange else {
+            return periodRange
+        }
+        let lower = min(recordRange.lowerBound, periodRange.lowerBound)
+        let upper = max(recordRange.upperBound, periodRange.upperBound)
+        return lower...upper
+    }
+
+    private var recordRange: ClosedRange<Date>? {
+        guard let exercise = selectedExercise else {
+            return nil
+        }
+        let dates = records
+            .filter { $0.exercise.id == exercise.id }
+            .map { calendar.startOfDay(for: $0.date) }
+        guard let minDate = dates.min(), let maxDate = dates.max() else {
+            return nil
+        }
+        let end = calendar.date(byAdding: .day, value: 1, to: maxDate) ?? maxDate
+        return minDate...end
+    }
+
     private var metricPoints: MetricPoints {
         guard let exercise = selectedExercise else {
             return .empty
         }
-        let range = periodRange
         let filtered = records.filter { record in
-            record.exercise.id == exercise.id &&
-            record.date >= range.lowerBound &&
-            record.date <= range.upperBound
+            record.exercise.id == exercise.id
         }
         let grouped = Dictionary(grouping: filtered, by: { record in
             calendar.startOfDay(for: record.date)
@@ -229,32 +254,56 @@ struct GraphView: View {
         title: String,
         points: [MetricPoint],
         range: ClosedRange<Date>,
-        selectedPoint: Binding<MetricPoint?>
+        selectedPoint: Binding<MetricPoint?>,
+        selectedDate: Binding<Date?>
     ) -> some View {
         let xRange = chartRange(for: range)
+        let yDomain = yRange(for: points)
         return VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
             ZStack {
-                Color.clear
-                GeometryReader { proxy in
-                    if let point = selectedPoint.wrappedValue {
-                        let position = valueLabelPosition(
-                            point: point,
-                            labelAreaSize: proxy.size,
-                            range: chartRange(for: range)
-                        )
-                        valueLabelView(for: point)
-                            .position(x: position.x, y: position.y)
-                            .zIndex(1)
+                if let point = selectedPoint.wrappedValue {
+                    HStack {
+                        Spacer()
+                        selectionSummaryView(for: point)
                     }
+                } else if let average = visibleAverageValue(in: xRange, points: points) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("平均")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(formattedValue(average))
+                                    .font(.system(size: 34, weight: .semibold))
+                                Text("kg")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Text(visiblePeriodLabel(in: xRange))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .frame(height: valueLabelAreaHeight)
+            .frame(height: 80, alignment: .top)
             Chart {
                 RuleMark(x: .value("開始", xRange.lowerBound))
                     .foregroundStyle(Color.secondary.opacity(0.35))
                     .lineStyle(StrokeStyle(lineWidth: 1))
+                PointMark(
+                    x: .value("範囲開始", xRange.lowerBound),
+                    y: .value("値", yDomain.lowerBound)
+                )
+                .opacity(0.001)
+                PointMark(
+                    x: .value("範囲終了", xRange.upperBound),
+                    y: .value("値", yDomain.lowerBound)
+                )
+                .opacity(0.001)
                 ForEach(points) { point in
                     let xValue = plotDate(for: point)
                     LineMark(
@@ -286,14 +335,18 @@ struct GraphView: View {
                     AxisTick()
                     if let date = value.as(Date.self) {
                         AxisValueLabel(axisDateLabel(date, period: selectedPeriod))
-                            .offset(y: -6)
+                            .offset(y: 2)
                     }
                 }
             }
             .chartYAxis {
-                AxisMarks(position: .trailing)
+                AxisMarks(position: .trailing, values: gridlineValues(for: yDomain)) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel()
+                }
             }
-            .chartYScale(domain: yRange(for: points))
+            .chartYScale(domain: yDomain)
             .applyIfAvailable { chart in
                 chart
                     .chartScrollableAxes(.horizontal)
@@ -301,47 +354,23 @@ struct GraphView: View {
                     .chartScrollPosition(x: $chartScrollPosition)
             }
             .frame(height: 360)
-            .padding(.top, 24)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
-                    ZStack {
-                        Rectangle()
-                            .fill(Color.clear)
-                            .contentShape(Rectangle())
-                            .gesture(
-                                SpatialTapGesture()
-                                    .onEnded { value in
-                                        guard let plotFrameAnchor = proxy.plotFrame else {
-                                            return
-                                        }
-                                        let plotFrame = geometry[plotFrameAnchor]
-                                        let location = value.location
-                                        if !plotFrame.contains(location) {
-                                            selectedPoint.wrappedValue = nil
-                                            return
-                                        }
-                                        let locationX = location.x - plotFrame.origin.x
-                                        let locationY = location.y - plotFrame.origin.y
-                                        guard let date: Date = proxy.value(atX: locationX) else {
-                                            return
-                                        }
-                                        guard let nearest = nearestPoint(to: date, in: points),
-                                              let nearestX = proxy.position(forX: nearest.date),
-                                              let nearestY = proxy.position(forY: nearest.value)
-                                        else {
-                                            selectedPoint.wrappedValue = nil
-                                            return
-                                        }
-                                        let distance = hypot(nearestX - locationX, nearestY - locationY)
-                                        if distance <= 20 {
-                                            selectedPoint.wrappedValue = nearest
-                                        } else {
-                                            selectedPoint.wrappedValue = nil
-                                        }
-                                    }
-                            )
-
-                    }
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(
+                            SpatialTapGesture()
+                                .onEnded { value in
+                                    handleChartTap(
+                                        location: value.location,
+                                        proxy: proxy,
+                                        geometry: geometry,
+                                        points: points,
+                                        selectedPoint: selectedPoint,
+                                        selectedDate: selectedDate
+                                    )
+                                }
+                        )
                 }
             }
         }
@@ -357,6 +386,36 @@ struct GraphView: View {
         points.min { lhs, rhs in
             abs(plotDate(for: lhs).timeIntervalSince(date)) < abs(plotDate(for: rhs).timeIntervalSince(date))
         }
+    }
+
+    private func handleChartTap(
+        location: CGPoint,
+        proxy: ChartProxy,
+        geometry: GeometryProxy,
+        points: [MetricPoint],
+        selectedPoint: Binding<MetricPoint?>,
+        selectedDate: Binding<Date?>
+    ) {
+        guard let plotFrameAnchor = proxy.plotFrame else {
+            return
+        }
+        let plotFrame = geometry[plotFrameAnchor]
+        if !plotFrame.contains(location) {
+            selectedPoint.wrappedValue = nil
+            selectedDate.wrappedValue = nil
+            return
+        }
+        let locationX = location.x - plotFrame.origin.x
+        guard let date: Date = proxy.value(atX: locationX) else {
+            return
+        }
+        guard let nearest = nearestPoint(to: date, in: points) else {
+            selectedPoint.wrappedValue = nil
+            selectedDate.wrappedValue = nil
+            return
+        }
+        selectedPoint.wrappedValue = nearest
+        selectedDate.wrappedValue = plotDate(for: nearest)
     }
 
     private func formattedValue(_ value: Double) -> String {
@@ -376,10 +435,6 @@ struct GraphView: View {
         case .oneYear:
             return 365 * 24 * 60 * 60
         }
-    }
-
-    private func scrollTargetDate(for period: GraphPeriod) -> Date {
-        endOfCurrentSection(for: period).addingTimeInterval(-visibleDomainLength(for: period) / 2)
     }
 
     private func endOfCurrentSection(for period: GraphPeriod) -> Date {
@@ -433,14 +488,108 @@ struct GraphView: View {
         selectedExercise?.name ?? "種目を選択"
     }
 
-    private func updateSelectedMetricPoint() {
+    private func visiblePeriodLabel(in range: ClosedRange<Date>) -> String {
+        let resolvedRange = clampedVisibleRange(in: range)
+        let lower = calendar.startOfDay(for: resolvedRange.lowerBound)
+        let upperAnchor = resolvedRange.upperBound.addingTimeInterval(-1)
+        let upper = endOfDay(for: upperAnchor, fallback: lower)
+        return formattedPeriodLabel(lower: lower, upper: upper)
+    }
+
+    private func visibleAverageValue(in range: ClosedRange<Date>, points: [MetricPoint]) -> Double? {
+        let resolvedRange = clampedVisibleRange(in: range)
+        let filtered = points.filter { point in
+            let date = plotDate(for: point)
+            return date >= resolvedRange.lowerBound && date <= resolvedRange.upperBound
+        }
+        guard !filtered.isEmpty else {
+            return nil
+        }
+        let total = filtered.reduce(0.0) { $0 + $1.value }
+        return total / Double(filtered.count)
+    }
+
+    private func selectionSummaryView(for point: MetricPoint) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("平均")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(formattedValue(point.value))
+                    .font(.system(size: 30, weight: .semibold))
+                Text("kg")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Text(selectionPeriodLabel(for: point))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    private func selectionPeriodLabel(for point: MetricPoint) -> String {
+        if let range = point.range {
+            let lower = calendar.startOfDay(for: range.start)
+            let upperAnchor = range.end.addingTimeInterval(-1)
+            let upper = endOfDay(for: upperAnchor, fallback: lower)
+            return formattedPeriodLabel(lower: lower, upper: upper)
+        }
+        let date = calendar.startOfDay(for: point.date)
+        return formattedPeriodLabel(lower: date, upper: date)
+    }
+
+    private func clampedVisibleRange(in range: ClosedRange<Date>) -> ClosedRange<Date> {
+        let length = visibleDomainLength(for: selectedPeriod)
+        let maxLower = range.upperBound.addingTimeInterval(-length)
+        let clampedLower = min(max(chartScrollPosition, range.lowerBound), maxLower)
+        let lower = max(clampedLower, range.lowerBound)
+        let upper = min(lower.addingTimeInterval(length), range.upperBound)
+        if upper <= lower {
+            return range
+        }
+        return lower...upper
+    }
+
+    private func endOfDay(for date: Date, fallback: Date) -> Date {
+        let dayStart = calendar.startOfDay(for: date)
+        return calendar.date(byAdding: .day, value: 1, to: dayStart)?.addingTimeInterval(-1)
+            ?? fallback
+    }
+
+    private func formattedPeriodLabel(lower: Date, upper: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = calendar.locale
+        formatter.dateFormat = "yyyy/MM/dd"
+        let start = formatter.string(from: lower)
+        let end = formatter.string(from: upper)
+        return "\(start) - \(end)"
+    }
+
+    private func updateSelectedMetricPoint(autoSelect: Bool) {
         let metrics = metricPoints
         let points = points(for: selectedMetric, in: metrics)
         guard !points.isEmpty else {
             selectedMetricPoint = nil
+            selectedDate = nil
+            return
+        }
+        guard autoSelect, !hasAutoSelectedInitialPoint else {
+            selectedMetricPoint = nil
+            selectedDate = nil
             return
         }
         selectedMetricPoint = points.max(by: { selectionDate(for: $0) < selectionDate(for: $1) })
+        if let selectedMetricPoint {
+            selectedDate = plotDate(for: selectedMetricPoint)
+            hasAutoSelectedInitialPoint = true
+        }
     }
 
     private func points(for metric: GraphMetric, in metrics: MetricPoints) -> [MetricPoint] {
@@ -453,7 +602,7 @@ struct GraphView: View {
         case .maxWeight:
             basePoints = metrics.maxWeight
         }
-        return aggregatedPoints(from: basePoints, period: selectedPeriod, anchor: periodRange.lowerBound)
+        return aggregatedPoints(from: basePoints, period: selectedPeriod, anchor: chartDataRange.lowerBound)
     }
 
     private func yRange(for points: [MetricPoint]) -> ClosedRange<Double> {
@@ -483,8 +632,72 @@ struct GraphView: View {
         }
     }
 
+    private func gridlineValues(for domain: ClosedRange<Double>) -> [Double] {
+        let lower = domain.lowerBound
+        let upper = domain.upperBound
+        let span = upper - lower
+        guard span > 0 else {
+            return [lower]
+        }
+        let step = span / 3
+        let rawTicks = [
+            lower,
+            lower + step,
+            lower + step * 2,
+            upper
+        ]
+        if shouldAlignTensGridlines {
+            let aligned = rawTicks.map { roundToTen($0) }
+            if alignedAreValid(aligned, lower: lower, upper: upper) {
+                return aligned
+            }
+        }
+        return rawTicks
+    }
+
+    private func roundUpToTen(_ value: Double) -> Double {
+        ceil(value / 10) * 10
+    }
+
+    private func roundDownToTen(_ value: Double) -> Double {
+        floor(value / 10) * 10
+    }
+
+    private func roundToTen(_ value: Double) -> Double {
+        (value / 10).rounded() * 10
+    }
+
+    private func alignedAreValid(_ values: [Double], lower: Double, upper: Double) -> Bool {
+        guard values.count == 4 else {
+            return false
+        }
+        if values.contains(where: { $0 < lower || $0 > upper }) {
+            return false
+        }
+        return values[0] < values[1] && values[1] < values[2] && values[2] < values[3]
+    }
+
+    private var shouldAlignTensGridlines: Bool {
+        switch selectedPeriod {
+        case .threeMonths, .sixMonths, .oneYear:
+            return true
+        case .oneWeek, .oneMonth:
+            return false
+        }
+    }
+
     private func chartRange(for range: ClosedRange<Date>) -> ClosedRange<Date> {
         range
+    }
+
+    private func updateChartScrollPosition() {
+        chartScrollPosition = scrollLowerBound(for: selectedPeriod, in: chartDataRange)
+    }
+
+    private func scrollLowerBound(for period: GraphPeriod, in range: ClosedRange<Date>) -> Date {
+        let length = visibleDomainLength(for: period)
+        let lower = range.upperBound.addingTimeInterval(-length)
+        return max(lower, range.lowerBound)
     }
 
     private func valueLabelView(for point: MetricPoint) -> some View {
