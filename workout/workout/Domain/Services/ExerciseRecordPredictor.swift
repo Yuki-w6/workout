@@ -19,7 +19,8 @@ struct ExerciseRecordPredictor {
         var weightDeltas: [Double] = []
         var repsDeltas: [Double] = []
 
-        for record in records {
+        let sortedRecords = records.sorted { $0.date < $1.date }
+        for record in sortedRecords {
             let details = record.details.sorted { $0.setNumber < $1.setNumber }
                 .filter { $0.weightUnit == unit }
             for detail in details {

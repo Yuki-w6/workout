@@ -1,0 +1,29 @@
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdata/
+*.xcuserdatad/
+*.xcworkspace/xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.xcresult
+
+# SwiftPM
+.build/
+.swiftpm/
+
+# CocoaPods / Carthage
+Pods/
+Carthage/Build/
+
+# IDEs
+.idea/
+.vscode/
+
+# Vim
+*.swp
+*.swo

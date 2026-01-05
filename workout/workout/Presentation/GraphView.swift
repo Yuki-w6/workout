@@ -219,6 +219,7 @@ struct GraphView: View {
         guard let exercise = selectedExercise else {
             return .empty
         }
+        let unit = exercise.weightUnit
         let filtered = records.filter { record in
             record.exercise.id == exercise.id
         }
@@ -237,15 +238,20 @@ struct GraphView: View {
                 continue
             }
             let totalLoad = details.reduce(0.0) { partial, detail in
-                partial + detail.weight * Double(detail.repetitions)
+                let weight = convertedWeight(detail.weight, from: detail.weightUnit, to: unit)
+                return partial + weight * Double(detail.repetitions)
             }
             let maxDetail = details.max { lhs, rhs in
-                if lhs.weight != rhs.weight {
-                    return lhs.weight < rhs.weight
+                let lhsWeight = convertedWeight(lhs.weight, from: lhs.weightUnit, to: unit)
+                let rhsWeight = convertedWeight(rhs.weight, from: rhs.weightUnit, to: unit)
+                if lhsWeight != rhsWeight {
+                    return lhsWeight < rhsWeight
                 }
                 return lhs.repetitions < rhs.repetitions
             }
-            let maxWeight = maxDetail?.weight ?? 0.0
+            let maxWeight = maxDetail.map { detail in
+                convertedWeight(detail.weight, from: detail.weightUnit, to: unit)
+            } ?? 0.0
             let reps = Double(maxDetail?.repetitions ?? 0)
             let maxRM = maxWeight * (reps / 40.0) + maxWeight
 
@@ -316,7 +322,7 @@ struct GraphView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
                                 Text(formattedValue(average))
                                     .font(.system(size: 34, weight: .semibold))
-                                Text("kg")
+                                Text(displayUnitLabel)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(.secondary)
                             }
@@ -536,6 +542,17 @@ struct GraphView: View {
         String(format: "%.2f", value)
     }
 
+    private func convertedWeight(_ weight: Double, from: WeightUnit, to: WeightUnit) -> Double {
+        guard from != to else {
+            return weight
+        }
+        let poundsPerKilogram = 2.20462
+        if from == .kg && to == .lbs {
+            return weight * poundsPerKilogram
+        }
+        return weight / poundsPerKilogram
+    }
+
     private func visibleDomainLength(for period: GraphPeriod) -> TimeInterval {
         switch period {
         case .oneWeek:
@@ -602,6 +619,10 @@ struct GraphView: View {
         selectedExercise?.name ?? "種目を選択"
     }
 
+    private var displayUnitLabel: String {
+        selectedExercise?.weightUnit.rawValue ?? "kg"
+    }
+
     private func visiblePeriodLabel(in range: ClosedRange<Date>) -> String {
         let resolvedRange = clampedVisibleRange(in: range)
         let lower = calendar.startOfDay(for: resolvedRange.lowerBound)
@@ -633,7 +654,7 @@ struct GraphView: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formattedValue(point.value))
                     .font(.system(size: 30, weight: .semibold))
-                Text("kg")
+                Text(displayUnitLabel)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -828,7 +849,7 @@ struct GraphView: View {
     }
 
     private func valueLabelView(for point: MetricPoint) -> some View {
-        Text("\(formattedValue(point.value))kg")
+        Text("\(formattedValue(point.value))\(displayUnitLabel)")
             .font(.caption.weight(.semibold))
             .padding(.vertical, 4)
             .padding(.horizontal, 8)

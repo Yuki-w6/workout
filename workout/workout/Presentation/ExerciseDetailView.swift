@@ -613,7 +613,8 @@ private extension ExerciseDetailView {
     }
 
     func formatWeight(_ weight: Double) -> String {
-        let number = NSNumber(value: weight)
+        let rounded = (weight * 2).rounded() / 2
+        let number = NSNumber(value: rounded)
         return Self.weightFormatter.string(from: number) ?? String(format: "%.1f", weight)
     }
 
