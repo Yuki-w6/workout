@@ -7,7 +7,7 @@ struct workoutApp: App {
     @StateObject private var appState = AppState()
     
     init() {
-        let pink = UIColor(red: 1.0, green: 0.361, blue: 0.659, alpha: 1.0)
+        let pink = UIColor(red: 0.992, green: 0.294, blue: 0.004, alpha: 1.0)
         let appearance = UITabBarAppearance()
         appearance.configureWithDefaultBackground()
         appearance.stackedLayoutAppearance.selected.iconColor = pink
