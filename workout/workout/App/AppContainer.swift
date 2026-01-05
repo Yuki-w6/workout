@@ -1,28 +1,28 @@
 import Foundation
 import SwiftData
 
-@MainActor
 final class AppContainer {
-    static let shared = AppContainer()
-
     let modelContainer: ModelContainer
     let exerciseRepository: ExerciseRepository
 
-    private init() {
-        let schema = Schema([Exercise.self, ExerciseSet.self, RecordHeader.self, RecordDetail.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        do {
-            modelContainer = try ModelContainer(for: schema, configurations: [configuration])
-        } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
-        }
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
         let modelContext = ModelContext(modelContainer)
         exerciseRepository = SwiftDataExerciseRepository(modelContext: modelContext)
-        seedExercisesIfNeeded()
     }
 
-    private func seedExercisesIfNeeded() {
-        guard exerciseRepository.fetchAll().isEmpty else {
+    static func make() throws -> AppContainer {
+        let schema = Schema([Exercise.self, ExerciseSet.self, RecordHeader.self, RecordDetail.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+        seedExercisesIfNeeded(using: modelContainer)
+        return AppContainer(modelContainer: modelContainer)
+    }
+
+    private static func seedExercisesIfNeeded(using modelContainer: ModelContainer) {
+        let modelContext = ModelContext(modelContainer)
+        let repository = SwiftDataExerciseRepository(modelContext: modelContext)
+        guard repository.fetchAll().isEmpty else {
             return
         }
         let presets: [(name: String, bodyPart: BodyPart)] = [
@@ -41,7 +41,7 @@ final class AppContainer {
         ]
 
         for preset in presets {
-            _ = exerciseRepository.addExercise(name: preset.name, bodyPart: preset.bodyPart)
+            _ = repository.addExercise(name: preset.name, bodyPart: preset.bodyPart)
         }
     }
 }

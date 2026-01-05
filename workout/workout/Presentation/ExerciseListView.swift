@@ -87,7 +87,9 @@ struct ExerciseListView: View {
                         } label: {
                             Label("種目を追加", systemImage: "plus")
                                 .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
+                        .tint(.secondary)
                     }
                 }
             }

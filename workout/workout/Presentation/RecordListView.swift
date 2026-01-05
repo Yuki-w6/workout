@@ -68,10 +68,10 @@ struct RecordListView: View {
                                         )
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text("Set \(detail.setNumber)")
+                                            Text("セット\(detail.setNumber)")
                                                 .font(.subheadline)
                                                 .foregroundStyle(.secondary)
-                                            Text("\(detail.weight, specifier: "%.1f") \(detail.weightUnit.rawValue) ・ \(detail.repetitions)回")
+                                            Text("\(detail.weight, specifier: "%.1f") \(detail.weightUnit.rawValue) × \(detail.repetitions)回")
                                                 .font(.headline)
                                             if let memo = detail.memo, !memo.isEmpty {
                                                 Text(memo)
@@ -174,19 +174,21 @@ private struct CalendarMonthView: View {
                     if let date = days[index] {
                         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
                         let isMarked = markedDates.contains(calendar.startOfDay(for: date))
+                        let isToday = calendar.isDateInToday(date)
                         Button {
                             selectedDate = date
                         } label: {
                             VStack(spacing: 4) {
                                 Text("\(calendar.component(.day, from: date))")
                                     .font(.subheadline)
+                                    .foregroundStyle(isToday ? Color.appPink : Color.primary)
                                     .frame(maxWidth: .infinity)
                                 Circle()
-                                    .fill(isMarked ? Color.accentColor : Color.clear)
+                                    .fill(isMarked ? Color.appPink : Color.clear)
                                     .frame(width: 4, height: 4)
                             }
                             .padding(6)
-                            .background(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+                            .background(isSelected ? Color.appPink.opacity(0.15) : Color.clear)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                         .buttonStyle(.plain)

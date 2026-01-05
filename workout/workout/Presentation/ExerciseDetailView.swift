@@ -473,12 +473,8 @@ private struct RecordInputFieldModifier: ViewModifier {
         content
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(Color(.secondarySystemBackground))
+            .background(Color(.tertiarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.secondary.opacity(0.35))
-            )
     }
 }
 
