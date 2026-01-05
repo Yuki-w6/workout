@@ -14,6 +14,11 @@ struct GraphView: View {
     @State private var hasAutoSelectedInitialPoint = false
     @State private var valueLabelSize: CGSize = .zero
     @State private var chartScrollPosition: Date = Date()
+    @State private var selectedPointXInSpace: CGFloat?
+    @State private var selectionCardFrame: CGRect?
+    @State private var selectionCardSize: CGSize = .zero
+    @State private var plotFrameInSpace: CGRect?
+    @State private var selectionCardSizeTick = 0
     @AppStorage("lastGraphMetric") private var lastGraphMetricRaw = GraphMetric.totalLoad.rawValue
     private let valueLabelAreaWidth: CGFloat = 320
     private let valueLabelAreaHeight: CGFloat = 56
@@ -44,7 +49,7 @@ struct GraphView: View {
             viewModel.load()
             syncExerciseSelection()
             selectedMetric = GraphMetric(rawValue: lastGraphMetricRaw) ?? .totalLoad
-            updateSelectedMetricPoint(autoSelect: true)
+            updateSelectedMetricPoint(autoSelect: false)
             updateChartScrollPosition()
         }
         .onChange(of: selectedBodyPart) { _, _ in
@@ -71,6 +76,12 @@ struct GraphView: View {
         }
         .onChange(of: selectedMetricPoint) { _, _ in
             valueLabelSize = .zero
+            if selectedMetricPoint == nil {
+                selectionCardFrame = nil
+                selectionCardSize = .zero
+                selectedPointXInSpace = nil
+                plotFrameInSpace = nil
+            }
         }
     }
 
@@ -264,9 +275,37 @@ struct GraphView: View {
                 .font(.headline)
             ZStack {
                 if let point = selectedPoint.wrappedValue {
-                    HStack {
-                        Spacer()
+                    GeometryReader { proxy in
+                        let containerFrame = proxy.frame(in: .named("GraphViewSpace"))
+                        let targetXInSpace = selectedPointXInSpace ?? containerFrame.midX
+                        let targetX = targetXInSpace - containerFrame.minX
+                        let effectiveCardWidth = selectionCardSize.width > 0
+                            ? selectionCardSize.width
+                            : (selectionCardFrame?.width ?? 0)
+                        let clampedX = cardCenterX(
+                            inWidth: proxy.size.width,
+                            cardWidth: effectiveCardWidth,
+                            targetX: targetX
+                        )
                         selectionSummaryView(for: point)
+                            .background(
+                                GeometryReader { cardProxy in
+                                    Color.clear.preference(
+                                        key: SummaryCardFrameKey.self,
+                                        value: cardProxy.frame(in: .named("GraphViewSpace"))
+                                    )
+                                }
+                            )
+                            .background(
+                                GeometryReader { sizeProxy in
+                                    Color.clear.preference(
+                                        key: SummaryCardSizeKey.self,
+                                        value: sizeProxy.size
+                                    )
+                                }
+                            )
+                            .opacity(isSelectionLayoutReady ? 1 : 0)
+                            .position(x: clampedX, y: proxy.size.height / 2)
                     }
                 } else if let average = visibleAverageValue(in: xRange, points: points) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -290,6 +329,7 @@ struct GraphView: View {
                 }
             }
             .frame(height: 80, alignment: .top)
+            .frame(maxWidth: .infinity, alignment: .leading)
             Chart {
                 RuleMark(x: .value("開始", xRange.lowerBound))
                     .foregroundStyle(Color.secondary.opacity(0.35))
@@ -318,14 +358,16 @@ struct GraphView: View {
                 }
                 if let point = selectedPoint.wrappedValue {
                     let xValue = plotDate(for: point)
+                    RuleMark(x: .value("日付", xValue))
+                        .foregroundStyle(Color.secondary.opacity(0.35))
+                        .zIndex(0)
                     PointMark(
                         x: .value("日付", xValue),
                         y: .value("値", point.value)
                     )
                     .symbolSize(80)
                     .foregroundStyle(Color.appPink)
-                    RuleMark(x: .value("日付", xValue))
-                        .foregroundStyle(Color.secondary.opacity(0.35))
+                    .zIndex(2)
                 }
             }
             .chartXScale(domain: xRange)
@@ -371,6 +413,31 @@ struct GraphView: View {
                                     )
                                 }
                         )
+                        .onAppear {
+                            updateSelectionGeometry(proxy: proxy, geometry: geometry, point: selectedPoint.wrappedValue)
+                        }
+                        .onChange(of: selectedPoint.wrappedValue) { _, newPoint in
+                            updateSelectionGeometry(proxy: proxy, geometry: geometry, point: newPoint)
+                        }
+                        .onChange(of: chartScrollPosition) { _, _ in
+                            updateSelectionGeometry(proxy: proxy, geometry: geometry, point: selectedPoint.wrappedValue)
+                        }
+                        .onChange(of: selectionCardSizeTick) { _, _ in
+                            updateSelectionGeometry(proxy: proxy, geometry: geometry, point: selectedPoint.wrappedValue)
+                        }
+                }
+            }
+        }
+        .onPreferenceChange(SummaryCardFrameKey.self) { frame in
+            DispatchQueue.main.async {
+                selectionCardFrame = frame
+            }
+        }
+        .onPreferenceChange(SummaryCardSizeKey.self) { size in
+            DispatchQueue.main.async {
+                selectionCardSize = size
+                if size != .zero {
+                    selectionCardSizeTick += 1
                 }
             }
         }
@@ -416,6 +483,53 @@ struct GraphView: View {
         }
         selectedPoint.wrappedValue = nearest
         selectedDate.wrappedValue = plotDate(for: nearest)
+    }
+
+    private func updateSelectionGeometry(
+        proxy: ChartProxy?,
+        geometry: GeometryProxy?,
+        point: MetricPoint?
+    ) {
+        guard let point else {
+            return
+        }
+        guard let proxy, let geometry, let plotFrameAnchor = proxy.plotFrame else {
+            return
+        }
+        let plotFrame = geometry[plotFrameAnchor]
+        let chartFrameInSpace = geometry.frame(in: .named("GraphViewSpace"))
+        let plotFrameInSpace = CGRect(
+            x: chartFrameInSpace.minX + plotFrame.minX,
+            y: chartFrameInSpace.minY + plotFrame.minY,
+            width: plotFrame.width,
+            height: plotFrame.height
+        )
+        guard let xPosition = proxy.position(forX: plotDate(for: point)) else {
+            return
+        }
+        let rawXInSpace = plotFrameInSpace.minX + xPosition
+        let clampedXInSpace = min(max(rawXInSpace, plotFrameInSpace.minX), plotFrameInSpace.maxX)
+        DispatchQueue.main.async {
+            selectedPointXInSpace = clampedXInSpace
+            self.plotFrameInSpace = plotFrameInSpace
+        }
+    }
+
+    private func cardCenterX(inWidth width: CGFloat, cardWidth: CGFloat, targetX: CGFloat) -> CGFloat {
+        guard cardWidth > 0 else {
+            return min(max(targetX, 0), width)
+        }
+        let edgeInset: CGFloat = 12
+        let halfWidth = cardWidth / 2
+        let minCenter = halfWidth + edgeInset
+        let maxCenter = max(width - halfWidth - edgeInset, minCenter)
+        return min(max(targetX, minCenter), maxCenter)
+    }
+
+    private var isSelectionLayoutReady: Bool {
+        selectedPointXInSpace != nil
+            && plotFrameInSpace != nil
+            && selectionCardFrame != nil
     }
 
     private func formattedValue(_ value: Double) -> String {
@@ -511,9 +625,11 @@ struct GraphView: View {
 
     private func selectionSummaryView(for point: MetricPoint) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("平均")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if point.isAverage {
+                Text("平均")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formattedValue(point.value))
                     .font(.system(size: 30, weight: .semibold))
@@ -538,10 +654,13 @@ struct GraphView: View {
             let lower = calendar.startOfDay(for: range.start)
             let upperAnchor = range.end.addingTimeInterval(-1)
             let upper = endOfDay(for: upperAnchor, fallback: lower)
+            if calendar.isDate(lower, inSameDayAs: upper) {
+                return formattedSingleDateLabel(lower)
+            }
             return formattedPeriodLabel(lower: lower, upper: upper)
         }
         let date = calendar.startOfDay(for: point.date)
-        return formattedPeriodLabel(lower: date, upper: date)
+        return formattedSingleDateLabel(date)
     }
 
     private func clampedVisibleRange(in range: ClosedRange<Date>) -> ClosedRange<Date> {
@@ -570,6 +689,14 @@ struct GraphView: View {
         let start = formatter.string(from: lower)
         let end = formatter.string(from: upper)
         return "\(start) - \(end)"
+    }
+
+    private func formattedSingleDateLabel(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = calendar.locale
+        formatter.dateFormat = "yyyy/MM/dd"
+        return formatter.string(from: date)
     }
 
     private func updateSelectedMetricPoint(autoSelect: Bool) {
@@ -826,6 +953,22 @@ struct GraphView: View {
 }
 
 private struct ValueLabelSizeKey: PreferenceKey {
+    static var defaultValue: CGSize { .zero }
+
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private struct SummaryCardFrameKey: PreferenceKey {
+    static var defaultValue: CGRect? { nil }
+
+    static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
+        value = nextValue() ?? value
+    }
+}
+
+private struct SummaryCardSizeKey: PreferenceKey {
     static var defaultValue: CGSize { .zero }
 
     static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
