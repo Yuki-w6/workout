@@ -44,25 +44,32 @@
 		FA301B652F05FB760005BF68 /* workoutUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = workoutUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FA7387302F123EFA004D1470 /* Exceptions for "workout" folder in "workout" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = FA301B482F05FB720005BF68 /* workout */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		FA301B4B2F05FB730005BF68 /* workout */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				FA7387302F123EFA004D1470 /* Exceptions for "workout" folder in "workout" target */,
 			);
 			path = workout;
 			sourceTree = "<group>";
 		};
 		FA301B5E2F05FB760005BF68 /* workoutTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = workoutTests;
 			sourceTree = "<group>";
 		};
 		FA301B682F05FB760005BF68 /* workoutUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = workoutUITests;
 			sourceTree = "<group>";
 		};
@@ -106,7 +113,6 @@
 				35A52EAE53A4B89ABF1391DA /* Pods-workoutUITests.debug.xcconfig */,
 				E5E198F5ADB60D4EC50B5858 /* Pods-workoutUITests.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -537,7 +543,9 @@
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -568,7 +576,9 @@
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
