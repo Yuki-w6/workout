@@ -1,0 +1,14 @@
+platform :ios, '12.0'
+
+target 'workout' do
+  use_frameworks!
+  pod 'Google-Mobile-Ads-SDK'
+
+  target 'workoutTests' do
+    inherit! :search_paths
+  end
+
+  target 'workoutUITests' do
+    inherit! :search_paths
+  end
+end
