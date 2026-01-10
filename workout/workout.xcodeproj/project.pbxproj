@@ -542,6 +542,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
@@ -575,6 +576,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";

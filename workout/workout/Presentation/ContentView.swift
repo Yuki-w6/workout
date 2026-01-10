@@ -1,7 +1,11 @@
+import AppTrackingTransparency
+import GoogleMobileAds
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel: ExerciseListViewModel
+    @AppStorage("hasRequestedTrackingAuthorization") private var hasRequestedTrackingAuthorization = false
+    @State private var hasStartedAds = false
 
     init(viewModel: ExerciseListViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -31,6 +35,47 @@ struct ContentView: View {
                     }
                 }
         }
+        .task {
+            await MainActor.run {
+                requestTrackingAuthorizationIfNeeded()
+            }
+        }
+    }
+
+    private func requestTrackingAuthorizationIfNeeded() {
+        guard !hasRequestedTrackingAuthorization else {
+            startMobileAdsIfNeeded()
+            return
+        }
+        if #available(iOS 14, *) {
+            let status = ATTrackingManager.trackingAuthorizationStatus
+            guard status == .notDetermined else {
+                hasRequestedTrackingAuthorization = true
+                startMobileAdsIfNeeded()
+                return
+            }
+            ATTrackingManager.requestTrackingAuthorization { @Sendable _ in
+                Task { @MainActor in
+                    hasRequestedTrackingAuthorization = true
+                    startMobileAdsIfNeeded()
+                }
+            }
+        } else {
+            hasRequestedTrackingAuthorization = true
+            startMobileAdsIfNeeded()
+        }
+    }
+
+    private func startMobileAdsIfNeeded() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async {
+                startMobileAdsIfNeeded()
+            }
+            return
+        }
+        guard !hasStartedAds else { return }
+        hasStartedAds = true
+        MobileAds.shared.start(completionHandler: { _ in })
     }
 }
 
