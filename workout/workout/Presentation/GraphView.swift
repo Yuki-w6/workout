@@ -349,6 +349,13 @@ struct GraphView: View {
                 RuleMark(x: .value("開始", xRange.lowerBound))
                     .foregroundStyle(Color.secondary.opacity(0.35))
                     .lineStyle(StrokeStyle(lineWidth: 1))
+                if shouldShowMonthBoundaries(for: selectedPeriod) {
+                    ForEach(monthBoundaryDates(in: xRange), id: \.self) { boundary in
+                        RuleMark(x: .value("月境界", boundary))
+                            .foregroundStyle(Color.secondary.opacity(0.2))
+                            .lineStyle(StrokeStyle(lineWidth: 1))
+                    }
+                }
                 PointMark(
                     x: .value("範囲開始", xRange.lowerBound),
                     y: .value("値", yDomain.lowerBound)
@@ -409,25 +416,19 @@ struct GraphView: View {
                     .chartScrollableAxes(.horizontal)
                     .chartXVisibleDomain(length: visibleDomainLength(for: selectedPeriod))
                     .chartScrollPosition(x: $chartScrollPosition)
+                    .chartXSelection(value: selectedDate)
+            }
+            .onChange(of: selectedDate.wrappedValue) { _, newValue in
+                guard let date = newValue else {
+                    selectedPoint.wrappedValue = nil
+                    return
+                }
+                selectedPoint.wrappedValue = nearestPoint(to: date, in: points)
             }
             .frame(height: 360)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Color.clear
-                        .contentShape(Rectangle())
-                        .simultaneousGesture(
-                            SpatialTapGesture()
-                                .onEnded { value in
-                                    handleChartTap(
-                                        location: value.location,
-                                        proxy: proxy,
-                                        geometry: geometry,
-                                        points: points,
-                                        selectedPoint: selectedPoint,
-                                        selectedDate: selectedDate
-                                    )
-                                }
-                        )
                         .onAppear {
                             updateSelectionGeometry(proxy: proxy, geometry: geometry, point: selectedPoint.wrappedValue)
                         }
@@ -468,36 +469,6 @@ struct GraphView: View {
         points.min { lhs, rhs in
             abs(plotDate(for: lhs).timeIntervalSince(date)) < abs(plotDate(for: rhs).timeIntervalSince(date))
         }
-    }
-
-    private func handleChartTap(
-        location: CGPoint,
-        proxy: ChartProxy,
-        geometry: GeometryProxy,
-        points: [MetricPoint],
-        selectedPoint: Binding<MetricPoint?>,
-        selectedDate: Binding<Date?>
-    ) {
-        guard let plotFrameAnchor = proxy.plotFrame else {
-            return
-        }
-        let plotFrame = geometry[plotFrameAnchor]
-        if !plotFrame.contains(location) {
-            selectedPoint.wrappedValue = nil
-            selectedDate.wrappedValue = nil
-            return
-        }
-        let locationX = location.x - plotFrame.origin.x
-        guard let date: Date = proxy.value(atX: locationX) else {
-            return
-        }
-        guard let nearest = nearestPoint(to: date, in: points) else {
-            selectedPoint.wrappedValue = nil
-            selectedDate.wrappedValue = nil
-            return
-        }
-        selectedPoint.wrappedValue = nearest
-        selectedDate.wrappedValue = plotDate(for: nearest)
     }
 
     private func updateSelectionGeometry(
@@ -563,29 +534,18 @@ struct GraphView: View {
     }
 
     private func visibleDomainLength(for period: GraphPeriod) -> TimeInterval {
-        switch period {
-        case .oneWeek:
-            return 7 * 24 * 60 * 60
-        case .oneMonth:
-            return 30 * 24 * 60 * 60
-        case .threeMonths:
-            return 90 * 24 * 60 * 60
-        case .sixMonths:
-            return 180 * 24 * 60 * 60
-        case .oneYear:
-            return 365 * 24 * 60 * 60
-        }
+        let end = endOfCurrentSection(for: period)
+        let start = period.startDate(endingAt: end, calendar: calendar)
+        return end.timeIntervalSince(start)
     }
 
     private func endOfCurrentSection(for period: GraphPeriod) -> Date {
         let todayStart = calendar.startOfDay(for: Date())
         switch period {
-        case .oneWeek, .oneMonth:
+        case .oneWeek:
             return calendar.date(byAdding: .day, value: 1, to: todayStart) ?? Date()
-        case .threeMonths, .sixMonths:
-            return calendar.dateInterval(of: .weekOfYear, for: Date())?.end
-                ?? calendar.date(byAdding: .day, value: 7, to: todayStart)
-                ?? Date()
+        case .oneMonth, .threeMonths, .sixMonths:
+            return calendar.dateInterval(of: .month, for: Date())?.end ?? Date()
         case .oneYear:
             let interval = calendar.dateInterval(of: .month, for: Date())
             return interval?.end ?? Date()
@@ -604,7 +564,7 @@ struct GraphView: View {
         case .oneWeek:
             formatter.dateFormat = "E"
         case .oneMonth, .threeMonths:
-            formatter.dateFormat = "d"
+            formatter.dateFormat = "d日"
         case .sixMonths, .oneYear:
             formatter.dateFormat = "M月"
         }
@@ -847,6 +807,33 @@ struct GraphView: View {
         range
     }
 
+    private func shouldShowMonthBoundaries(for period: GraphPeriod) -> Bool {
+        switch period {
+        case .oneMonth, .threeMonths:
+            return true
+        case .oneWeek, .sixMonths, .oneYear:
+            return false
+        }
+    }
+
+    private func monthBoundaryDates(in range: ClosedRange<Date>) -> [Date] {
+        guard let monthInterval = calendar.dateInterval(of: .month, for: range.lowerBound) else {
+            return []
+        }
+        var dates: [Date] = []
+        var current = calendar.date(byAdding: .month, value: 1, to: monthInterval.start) ?? monthInterval.start
+        while current < range.upperBound {
+            if current > range.lowerBound {
+                dates.append(current)
+            }
+            guard let next = calendar.date(byAdding: .month, value: 1, to: current) else {
+                break
+            }
+            current = next
+        }
+        return dates
+    }
+
     private func updateChartScrollPosition() {
         chartScrollPosition = scrollLowerBound(for: selectedPeriod, in: chartDataRange)
     }
@@ -1083,11 +1070,23 @@ private enum GraphPeriod: String, CaseIterable, Identifiable {
         case .oneWeek:
             return calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
         case .oneMonth:
-            return calendar.date(byAdding: .month, value: -1, to: endDate) ?? endDate
+            let anchor = endDate.addingTimeInterval(-1)
+            guard let interval = calendar.dateInterval(of: .month, for: anchor) else {
+                return endDate
+            }
+            return interval.start
         case .threeMonths:
-            return calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+            let anchor = endDate.addingTimeInterval(-1)
+            guard let interval = calendar.dateInterval(of: .month, for: anchor) else {
+                return endDate
+            }
+            return calendar.date(byAdding: .month, value: -2, to: interval.start) ?? interval.start
         case .sixMonths:
-            return calendar.date(byAdding: .month, value: -6, to: endDate) ?? endDate
+            let anchor = endDate.addingTimeInterval(-1)
+            guard let interval = calendar.dateInterval(of: .month, for: anchor) else {
+                return endDate
+            }
+            return calendar.date(byAdding: .month, value: -5, to: interval.start) ?? interval.start
         case .oneYear:
             return calendar.date(byAdding: .year, value: -1, to: endDate) ?? endDate
         }
