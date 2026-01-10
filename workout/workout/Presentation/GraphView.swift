@@ -20,6 +20,7 @@ struct GraphView: View {
     @State private var plotFrameInSpace: CGRect?
     @State private var selectionCardSizeTick = 0
     @AppStorage("lastGraphMetric") private var lastGraphMetricRaw = GraphMetric.totalLoad.rawValue
+    private let graphBannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "GraphBannerAdUnitID") as? String
     private let valueLabelAreaWidth: CGFloat = 320
     private let valueLabelAreaHeight: CGFloat = 56
 
@@ -44,6 +45,14 @@ struct GraphView: View {
                 .padding()
             }
             .coordinateSpace(name: "GraphViewSpace")
+        }
+        .safeAreaInset(edge: .bottom) {
+            if let adUnitID = graphBannerAdUnitID, !adUnitID.isEmpty {
+                BannerAdView(adUnitID: adUnitID)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .padding(.horizontal, 16)
+            }
         }
         .onAppear {
             viewModel.load()

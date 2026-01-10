@@ -6,6 +6,9 @@ struct RecordListView: View {
     @Query(sort: \RecordHeader.date) private var records: [RecordHeader]
     @State private var selectedDate = Date()
     @State private var displayedMonth = Date()
+    @State private var toastMessage = ""
+    @State private var isToastPresented = false
+    private let recordListBannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "RecordListBannerAdUnitID") as? String
     @Environment(\.modelContext) private var modelContext
 
     private let calendar = Calendar.japaneseLocale
@@ -64,7 +67,10 @@ struct RecordListView: View {
                                             viewModel: viewModel,
                                             exerciseID: record.exercise.id,
                                             isNewRecord: false,
-                                            initialDate: record.date
+                                            initialDate: record.date,
+                                            onSave: { message in
+                                                showToast(message)
+                                            }
                                         )
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
@@ -95,6 +101,21 @@ struct RecordListView: View {
                 }
                 .listStyle(.insetGrouped)
             }
+            .toast(message: toastMessage, isPresented: $isToastPresented)
+            .safeAreaInset(edge: .bottom) {
+                if let adUnitID = recordListBannerAdUnitID, !adUnitID.isEmpty {
+                    BannerAdView(adUnitID: adUnitID)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                }
+            }
+        }
+    }
+
+    private func showToast(_ message: String) {
+        toastMessage = message
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isToastPresented = true
         }
     }
 

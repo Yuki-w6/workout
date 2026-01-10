@@ -42,6 +42,8 @@
 		FA301B492F05FB730005BF68 /* workout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = workout.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA301B5B2F05FB760005BF68 /* workoutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = workoutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA301B652F05FB760005BF68 /* workoutUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = workoutUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA9A0D1C2F20000100000001 /* workout/Config/Workout.Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = workout/Config/Workout.Debug.xcconfig; sourceTree = "<group>"; };
+		FA9A0D1C2F20000100000002 /* workout/Config/Workout.Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = workout/Config/Workout.Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -135,6 +137,7 @@
 				FA301B4A2F05FB730005BF68 /* Products */,
 				2F5E08D8FE966EFAF6AB792B /* Pods */,
 				792417EC33ABAA39F9AB4D25 /* Frameworks */,
+				FA73889B2F128A42004D1470 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -146,6 +149,15 @@
 				FA301B652F05FB760005BF68 /* workoutUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FA73889B2F128A42004D1470 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				FA9A0D1C2F20000100000001 /* workout/Config/Workout.Debug.xcconfig */,
+				FA9A0D1C2F20000100000002 /* workout/Config/Workout.Release.xcconfig */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -533,7 +545,7 @@
 		};
 		FA301B702F05FB760005BF68 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9E2B110DF21CE76264708AED /* Pods-workout.debug.xcconfig */;
+			baseConfigurationReference = FA9A0D1C2F20000100000001 /* workout/Config/Workout.Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -567,7 +579,7 @@
 		};
 		FA301B712F05FB760005BF68 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8342BABC707970470859B2B6 /* Pods-workout.release.xcconfig */;
+			baseConfigurationReference = FA9A0D1C2F20000100000002 /* workout/Config/Workout.Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

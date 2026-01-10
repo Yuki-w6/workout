@@ -10,6 +10,9 @@ struct ExerciseListView: View {
     @State private var draftNewExerciseName = ""
     @State private var isAddAlertPresented = false
     @State private var isDeleteBlockedAlertPresented = false
+    @State private var toastMessage = ""
+    @State private var isToastPresented = false
+    private let bannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "BannerAdUnitID") as? String
 
     private let bodyPartSections: [(bodyPart: BodyPart, title: String)] = [
         (.chest, "胸"),
@@ -36,63 +39,7 @@ struct ExerciseListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(bodyPartSections, id: \.bodyPart) { section in
-                    let sectionExercises = exercises(for: section.bodyPart)
-                    Section(section.title) {
-                        ForEach(sectionExercises, id: \.id) { exercise in
-                            NavigationLink {
-                                ExerciseDetailView(
-                                    viewModel: viewModel,
-                                    exerciseID: exercise.id,
-                                    isNewRecord: true,
-                                    initialDate: nil
-                                )
-                            } label: {
-                                Text(exercise.name)
-                                    .font(.headline)
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    let failedIds = viewModel.deleteExercises(ids: [exercise.id])
-                                    if !failedIds.isEmpty {
-                                        isDeleteBlockedAlertPresented = true
-                                    }
-                                } label: {
-                                    Label("削除", systemImage: "trash")
-                                }
-                                Button {
-                                    editingExercise = exercise
-                                    draftExerciseName = exercise.name
-                                    isEditAlertPresented = true
-                                } label: {
-                                    Label("編集", systemImage: "pencil")
-                                }
-                            }
-                        }
-                        .onDelete { offsets in
-                            let ids = offsets.compactMap { index in
-                                sectionExercises.indices.contains(index) ? sectionExercises[index].id : nil
-                            }
-                            let failedIds = viewModel.deleteExercises(ids: ids)
-                            if !failedIds.isEmpty {
-                                isDeleteBlockedAlertPresented = true
-                            }
-                        }
-
-                        Button {
-                            addingBodyPart = section.bodyPart
-                            draftNewExerciseName = ""
-                            isAddAlertPresented = true
-                        } label: {
-                            Label("種目を追加", systemImage: "plus")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .tint(.secondary)
-                    }
-                }
-            }
+            listContent
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
@@ -152,6 +99,98 @@ struct ExerciseListView: View {
                     addingBodyPart = nil
                 }
             }
+            .toast(message: toastMessage, isPresented: $isToastPresented)
+            .safeAreaInset(edge: .bottom) {
+                if let adUnitID = bannerAdUnitID, !adUnitID.isEmpty {
+                    BannerAdView(adUnitID: adUnitID)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .padding(.horizontal, 16)
+                }
+            }
+        }
+    }
+
+    private var listContent: some View {
+        List {
+            ForEach(bodyPartSections, id: \.bodyPart) { section in
+                let sectionExercises = exercises(for: section.bodyPart)
+                Section(section.title) {
+                    ForEach(sectionExercises, id: \.id) { exercise in
+                        exerciseRow(exercise)
+                    }
+                    .onDelete { offsets in
+                        deleteExercises(at: offsets, in: sectionExercises)
+                    }
+
+                    addExerciseButton(for: section.bodyPart)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func exerciseRow(_ exercise: Exercise) -> some View {
+        NavigationLink {
+            ExerciseDetailView(
+                viewModel: viewModel,
+                exerciseID: exercise.id,
+                isNewRecord: true,
+                initialDate: nil,
+                onSave: { message in
+                    showToast(message)
+                }
+            )
+        } label: {
+            Text(exercise.name)
+                .font(.headline)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                let failedIds = viewModel.deleteExercises(ids: [exercise.id])
+                if !failedIds.isEmpty {
+                    isDeleteBlockedAlertPresented = true
+                }
+            } label: {
+                Label("削除", systemImage: "trash")
+            }
+            Button {
+                editingExercise = exercise
+                draftExerciseName = exercise.name
+                isEditAlertPresented = true
+            } label: {
+                Label("編集", systemImage: "pencil")
+            }
+        }
+    }
+
+    private func addExerciseButton(for bodyPart: BodyPart) -> some View {
+        Button {
+            addingBodyPart = bodyPart
+            draftNewExerciseName = ""
+            isAddAlertPresented = true
+        } label: {
+            Label("種目を追加", systemImage: "plus")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .tint(.secondary)
+    }
+
+    private func deleteExercises(at offsets: IndexSet, in sectionExercises: [Exercise]) {
+        let ids = offsets.compactMap { index in
+            sectionExercises.indices.contains(index) ? sectionExercises[index].id : nil
+        }
+        let failedIds = viewModel.deleteExercises(ids: ids)
+        if !failedIds.isEmpty {
+            isDeleteBlockedAlertPresented = true
+        }
+    }
+
+    private func showToast(_ message: String) {
+        toastMessage = message
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isToastPresented = true
         }
     }
 }

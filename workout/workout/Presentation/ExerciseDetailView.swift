@@ -7,6 +7,7 @@ struct ExerciseDetailView: View {
     let exerciseID: UUID
     let isNewRecord: Bool
     let initialDate: Date?
+    let onSave: ((String) -> Void)?
     @State private var isEditing = false
     @State private var draftName = ""
     @State private var draftBodyPart: BodyPart = .chest
@@ -38,6 +39,20 @@ struct ExerciseDetailView: View {
         return formatter
     }()
     private let predictor = ExerciseRecordPredictor()
+
+    init(
+        viewModel: ExerciseListViewModel,
+        exerciseID: UUID,
+        isNewRecord: Bool,
+        initialDate: Date?,
+        onSave: ((String) -> Void)? = nil
+    ) {
+        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.exerciseID = exerciseID
+        self.isNewRecord = isNewRecord
+        self.initialDate = initialDate
+        self.onSave = onSave
+    }
 
     private enum FocusField: Hashable {
         case weight(Int)
@@ -111,6 +126,8 @@ struct ExerciseDetailView: View {
                 Button("保存") {
                     saveRecord(for: recordDate)
                     lastLoadedDate = calendar.startOfDay(for: recordDate)
+                    let message = isNewRecord ? "記録しました" : "変更しました"
+                    onSave?(message)
                     dismiss()
                 }
                 .accessibilityLabel("記録を保存")
