@@ -215,7 +215,7 @@ struct GraphView: View {
             return nil
         }
         let dates = records
-            .filter { $0.exercise.id == exercise.id }
+            .filter { $0.exercise?.id == exercise.id }
             .map { calendar.startOfDay(for: $0.date) }
         guard let minDate = dates.min(), let maxDate = dates.max() else {
             return nil
@@ -230,7 +230,7 @@ struct GraphView: View {
         }
         let unit = exercise.weightUnit
         let filtered = records.filter { record in
-            record.exercise.id == exercise.id
+            record.exercise?.id == exercise.id
         }
         let grouped = Dictionary(grouping: filtered, by: { record in
             calendar.startOfDay(for: record.date)
@@ -242,7 +242,7 @@ struct GraphView: View {
         var maxWeightPoints: [MetricPoint] = []
 
         for date in dates {
-            let details = grouped[date]?.flatMap { $0.details } ?? []
+            let details = grouped[date]?.flatMap { $0.details ?? [] } ?? []
             guard !details.isEmpty else {
                 continue
             }
@@ -865,7 +865,9 @@ struct GraphView: View {
                 }
                 DispatchQueue.main.async {
                     valueLabelSize = size
+#if DEBUG
                     print("GraphView valueLabelSize:", size)
+#endif
                 }
             }
     }

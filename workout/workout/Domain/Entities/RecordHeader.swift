@@ -3,22 +3,19 @@ import SwiftData
 
 @Model
 final class RecordHeader {
-    @Attribute(.unique) var id: UUID
-    var date: Date
-    var menu: Menu?
-    var exercise: Exercise
-    @Relationship(deleteRule: .cascade) var details: [RecordDetail]
+    var id: UUID = UUID()
+    var date: Date = Date()
+    @Relationship(inverse: \Exercise.recordHeaders) var exercise: Exercise?
+    @Relationship(deleteRule: .cascade, inverse: \RecordDetail.header) var details: [RecordDetail]?
 
     init(
         id: UUID = UUID(),
         date: Date,
-        menu: Menu? = nil,
         exercise: Exercise,
         details: [RecordDetail] = []
     ) {
         self.id = id
         self.date = date
-        self.menu = menu
         self.exercise = exercise
         self.details = details
     }

@@ -12,7 +12,9 @@ struct ExerciseListView: View {
     @State private var isDeleteBlockedAlertPresented = false
     @State private var toastMessage = ""
     @State private var isToastPresented = false
+    @State private var isSettingsPresented = false
     private let bannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "BannerAdUnitID") as? String
+    private var actionLabelColor: Color { .secondary }
 
     private let bodyPartSections: [(bodyPart: BodyPart, title: String)] = [
         (.chest, "胸"),
@@ -38,77 +40,119 @@ struct ExerciseListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            listContent
-            .searchable(
-                text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "種目を検索"
-            )
-            .onAppear {
-                viewModel.load()
-            }
-            .alert("種目名を変更", isPresented: $isEditAlertPresented) {
-                TextField("種目名", text: $draftExerciseName)
-                Button("保存") {
-                    guard let exercise = editingExercise else {
-                        return
+        ZStack {
+            NavigationStack {
+                listContent
+                    .onAppear {
+                        viewModel.load()
                     }
-                    viewModel.updateExercise(
-                        id: exercise.id,
-                        name: draftExerciseName,
-                        bodyPart: exercise.bodyPart
-                    )
-                    editingExercise = nil
-                }
-                Button("キャンセル", role: .cancel) {
-                    editingExercise = nil
-                }
-            } message: {
-                Text("新しい種目名を入力してください")
-            }
-            .alert("削除できません", isPresented: $isDeleteBlockedAlertPresented) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("記録のある種目は削除できません。")
-            }
-            .alert("種目を追加", isPresented: $isAddAlertPresented) {
-                TextField("種目名", text: $draftNewExerciseName)
-                Button("追加") {
-                    guard let bodyPart = addingBodyPart else {
-                        return
+                    .alert("種目名を変更", isPresented: $isEditAlertPresented) {
+                        TextField("種目名", text: $draftExerciseName)
+                        Button("保存") {
+                            guard let exercise = editingExercise else {
+                                return
+                            }
+                            viewModel.updateExercise(
+                                id: exercise.id,
+                                name: draftExerciseName,
+                                bodyPart: exercise.bodyPart
+                            )
+                            editingExercise = nil
+                        }
+                        Button("キャンセル", role: .cancel) {
+                            editingExercise = nil
+                        }
+                    } message: {
+                        Text("新しい種目名を入力してください")
                     }
-                    let trimmedName = draftNewExerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let finalName = trimmedName.isEmpty ? "新しい種目" : trimmedName
-                    viewModel.addExercise(name: finalName, bodyPart: bodyPart)
-                    addingBodyPart = nil
-                }
-                Button("キャンセル", role: .cancel) {
-                    addingBodyPart = nil
-                }
-            } message: {
-                Text("種目名を入力してください")
+                    .alert("削除できません", isPresented: $isDeleteBlockedAlertPresented) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        Text("記録のある種目は削除できません。")
+                    }
+                    .alert("種目を追加", isPresented: $isAddAlertPresented) {
+                        TextField("種目名", text: $draftNewExerciseName)
+                        Button("追加") {
+                            guard let bodyPart = addingBodyPart else {
+                                return
+                            }
+                            let trimmedName = draftNewExerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let finalName = trimmedName.isEmpty ? "新しい種目" : trimmedName
+                            viewModel.addExercise(name: finalName, bodyPart: bodyPart)
+                            addingBodyPart = nil
+                        }
+                        Button("キャンセル", role: .cancel) {
+                            addingBodyPart = nil
+                        }
+                    } message: {
+                        Text("種目名を入力してください")
+                    }
+                    .onChange(of: isEditAlertPresented) { _, newValue in
+                        if !newValue {
+                            editingExercise = nil
+                        }
+                    }
+                    .onChange(of: isAddAlertPresented) { _, newValue in
+                        if !newValue {
+                            addingBodyPart = nil
+                        }
+                    }
+                    .toast(message: toastMessage, isPresented: $isToastPresented)
+                    .safeAreaInset(edge: .top) {
+                        searchBar
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        if let adUnitID = bannerAdUnitID, !adUnitID.isEmpty {
+                            BannerAdView(adUnitID: adUnitID)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .padding(.horizontal, 16)
+                        }
+                    }
             }
-            .onChange(of: isEditAlertPresented) { _, newValue in
-                if !newValue {
-                    editingExercise = nil
+
+            SettingsSideSheet(isPresented: $isSettingsPresented)
+        }
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    isSettingsPresented = true
                 }
+            } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(actionLabelColor)
             }
-            .onChange(of: isAddAlertPresented) { _, newValue in
-                if !newValue {
-                    addingBodyPart = nil
+            .accessibilityLabel("設定メニューを開く")
+            .tint(actionLabelColor)
+
+            TextField("種目を検索", text: $searchText)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(actionLabelColor)
                 }
-            }
-            .toast(message: toastMessage, isPresented: $isToastPresented)
-            .safeAreaInset(edge: .bottom) {
-                if let adUnitID = bannerAdUnitID, !adUnitID.isEmpty {
-                    BannerAdView(adUnitID: adUnitID)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .padding(.horizontal, 16)
-                }
+                .accessibilityLabel("検索をクリア")
+                .tint(actionLabelColor)
             }
         }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
     private var listContent: some View {
@@ -172,9 +216,9 @@ struct ExerciseListView: View {
         } label: {
             Label("種目を追加", systemImage: "plus")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(actionLabelColor)
         }
-        .tint(.secondary)
+        .tint(actionLabelColor)
     }
 
     private func deleteExercises(at offsets: IndexSet, in sectionExercises: [Exercise]) {

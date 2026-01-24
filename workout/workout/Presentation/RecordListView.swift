@@ -59,41 +59,48 @@ struct RecordListView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(recordsForSelectedDate, id: \.id) { record in
-                            Section(record.exercise.name) {
-                                let sortedDetails = record.details.sorted { $0.setNumber < $1.setNumber }
-                                ForEach(sortedDetails, id: \.id) { detail in
-                                    NavigationLink {
-                                        ExerciseDetailView(
-                                            viewModel: viewModel,
-                                            exerciseID: record.exercise.id,
-                                            isNewRecord: false,
-                                            initialDate: record.date,
-                                            onSave: { message in
-                                                showToast(message)
-                                            }
-                                        )
-                                    } label: {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("セット\(detail.setNumber)")
-                                                .font(.subheadline)
-                                                .foregroundStyle(.secondary)
-                                            Text("\(detail.weight, specifier: "%.1f") \(detail.weightUnit.rawValue) × \(detail.repetitions)回")
-                                                .font(.headline)
-                                            if let memo = detail.memo, !memo.isEmpty {
-                                                Text(memo)
-                                                    .font(.footnote)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        Button(role: .destructive) {
-                                            deleteDetail(detail, in: record)
+                            if let exercise = record.exercise {
+                                Section(exercise.name) {
+                                    let sortedDetails = (record.details ?? []).sorted { $0.setNumber < $1.setNumber }
+                                    ForEach(sortedDetails, id: \.id) { detail in
+                                        NavigationLink {
+                                            ExerciseDetailView(
+                                                viewModel: viewModel,
+                                                exerciseID: exercise.id,
+                                                isNewRecord: false,
+                                                initialDate: record.date,
+                                                onSave: { message in
+                                                    showToast(message)
+                                                }
+                                            )
                                         } label: {
-                                            Label("削除", systemImage: "trash")
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("セット\(detail.setNumber)")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
+                                                Text("\(detail.weight, specifier: "%.1f") \(detail.weightUnit.rawValue) × \(detail.repetitions)回")
+                                                    .font(.headline)
+                                                if let memo = detail.memo, !memo.isEmpty {
+                                                    Text(memo)
+                                                        .font(.footnote)
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                            }
+                                            .padding(.vertical, 4)
+                                        }
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                            Button(role: .destructive) {
+                                                deleteDetail(detail, in: record)
+                                            } label: {
+                                                Label("削除", systemImage: "trash")
+                                            }
                                         }
                                     }
+                                }
+                            } else {
+                                Section("種目不明") {
+                                    Text("関連する種目が見つかりません。")
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -120,11 +127,12 @@ struct RecordListView: View {
     }
 
     private func deleteDetail(_ detail: RecordDetail, in record: RecordHeader) {
-        if let index = record.details.firstIndex(where: { $0.id == detail.id }) {
-            record.details.remove(at: index)
+        var details = record.details ?? []
+        if let index = details.firstIndex(where: { $0.id == detail.id }) {
+            details.remove(at: index)
         }
         modelContext.delete(detail)
-        let sorted = record.details.sorted { $0.setNumber < $1.setNumber }
+        let sorted = details.sorted { $0.setNumber < $1.setNumber }
         if sorted.isEmpty {
             modelContext.delete(record)
         } else {

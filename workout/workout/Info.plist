@@ -2,16 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-1976866996688533~6909684310</string>
 	<key>BannerAdUnitID</key>
 	<string>$(BANNER_AD_UNIT_ID)</string>
-	<key>RecordListBannerAdUnitID</key>
-	<string>$(RECORD_LIST_BANNER_AD_UNIT_ID)</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-1976866996688533~6909684310</string>
 	<key>GraphBannerAdUnitID</key>
 	<string>$(GRAPH_BANNER_AD_UNIT_ID)</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>無料で提供するため広告の最適化に使用します。</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>RecordListBannerAdUnitID</key>
+	<string>$(RECORD_LIST_BANNER_AD_UNIT_ID)</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -140,7 +142,7 @@
 		</dict>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>
-			<string></string>
+			<string>44jx6755aq.skadnetwork</string>
 		</dict>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>
@@ -180,7 +182,7 @@
 		</dict>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>
-			<string>4dzt52r2t5.skadnetwor</string>
+			<string>4dzt52r2t5.skadnetwork</string>
 		</dict>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>
@@ -188,7 +190,7 @@
 		</dict>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>
-			<string>c3frkrj4fj.skadnetwor</string>
+			<string>c3frkrj4fj.skadnetwork</string>
 		</dict>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>

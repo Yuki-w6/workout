@@ -18,13 +18,20 @@ enum WeightUnit: String, Codable, CaseIterable {
 
 @Model
 final class ExerciseSet {
-    @Attribute(.unique) var id: UUID
-    var order: Int
-    var weight: String
-    var reps: String
-    var memo: String
+    var id: UUID = UUID()
+    var order: Int = 0
+    var weight: String = ""
+    var reps: String = ""
+    var memo: String = ""
+    var exercise: Exercise?
 
-    init(id: UUID = UUID(), order: Int = 0, weight: String, reps: String, memo: String) {
+    init(
+        id: UUID = UUID(),
+        order: Int = 0,
+        weight: String,
+        reps: String,
+        memo: String
+    ) {
         self.id = id
         self.order = order
         self.weight = weight
@@ -56,11 +63,12 @@ extension BodyPart {
 
 @Model
 final class Exercise {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var bodyPart: BodyPart
-    var weightUnit: WeightUnit
-    @Relationship(deleteRule: .cascade) var sets: [ExerciseSet]
+    var id: UUID = UUID()
+    var name: String = ""
+    var bodyPart: BodyPart = BodyPart.chest
+    var weightUnit: WeightUnit = WeightUnit.kg
+    @Relationship(deleteRule: .cascade, inverse: \ExerciseSet.exercise) var sets: [ExerciseSet]?
+    var recordHeaders: [RecordHeader]?
 
     init(
         id: UUID = UUID(),

@@ -7,13 +7,9 @@ struct BannerAdView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> BannerView {
         let bannerView = BannerView(adSize: AdSizeBanner)
-        bannerView.translatesAutoresizingMaskIntoConstraints = false
         bannerView.adUnitID = adUnitID
         bannerView.rootViewController = rootViewController()
         bannerView.load(Request())
-        NSLayoutConstraint.activate([
-            bannerView.heightAnchor.constraint(equalToConstant: 50)
-        ])
         return bannerView
     }
 

@@ -3,12 +3,12 @@ import SwiftData
 
 @Model
 final class RecordDetail {
-    @Attribute(.unique) var id: UUID
-    var header: RecordHeader
-    var setNumber: Int
-    var weight: Double
-    var weightUnit: WeightUnit
-    var repetitions: Int
+    var id: UUID = UUID()
+    var header: RecordHeader?
+    var setNumber: Int = 0
+    var weight: Double = 0
+    var weightUnit: WeightUnit = WeightUnit.kg
+    var repetitions: Int = 0
     var memo: String?
 
     init(

@@ -10,6 +10,8 @@
 		245ECD258FD1AB6CE3B772F7 /* Pods_workoutTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B55F7672B28A8D56B679707C /* Pods_workoutTests.framework */; };
 		432F12198A1006AC08B02CB1 /* Pods_workout.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25133236E7801B659F62B284 /* Pods_workout.framework */; };
 		D2E136252C42969A449453BD /* Pods_workoutUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C97095FA8658EB07CAB54AC /* Pods_workoutUITests.framework */; };
+		FA9C73162F1CA59A00441491 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = FA9C73152F1CA59A00441491 /* FirebaseAnalytics */; };
+		FA9C73182F1CA59A00441493 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = FA9C73172F1CA59A00441492 /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +38,7 @@
 		8342BABC707970470859B2B6 /* Pods-workout.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-workout.release.xcconfig"; path = "Target Support Files/Pods-workout/Pods-workout.release.xcconfig"; sourceTree = "<group>"; };
 		8C97095FA8658EB07CAB54AC /* Pods_workoutUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_workoutUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E2B110DF21CE76264708AED /* Pods-workout.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-workout.debug.xcconfig"; path = "Target Support Files/Pods-workout/Pods-workout.debug.xcconfig"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* workout/GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "workout/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B55F7672B28A8D56B679707C /* Pods_workoutTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_workoutTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C52BDC763F65D3F3AA0D65E4 /* Pods-workoutTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-workoutTests.release.xcconfig"; path = "Target Support Files/Pods-workoutTests/Pods-workoutTests.release.xcconfig"; sourceTree = "<group>"; };
 		E5E198F5ADB60D4EC50B5858 /* Pods-workoutUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-workoutUITests.release.xcconfig"; path = "Target Support Files/Pods-workoutUITests/Pods-workoutUITests.release.xcconfig"; sourceTree = "<group>"; };
@@ -82,6 +85,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA9C73162F1CA59A00441491 /* FirebaseAnalytics in Frameworks */,
+				FA9C73182F1CA59A00441493 /* FirebaseCrashlytics in Frameworks */,
 				432F12198A1006AC08B02CB1 /* Pods_workout.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -156,6 +161,7 @@
 			children = (
 				FA9A0D1C2F20000100000001 /* workout/Config/Workout.Debug.xcconfig */,
 				FA9A0D1C2F20000100000002 /* workout/Config/Workout.Release.xcconfig */,
+				A1B2C3D4E5F60718293A4B5D /* workout/GoogleService-Info.plist */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -263,6 +269,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FA73868A2F0C109E004D1470 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				FA9C73142F1CA59A00441491 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA301B4A2F05FB730005BF68 /* Products */;
@@ -476,7 +483,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -533,7 +540,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -549,6 +556,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = workout/workout.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
@@ -558,19 +567,21 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
-				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "workout-app.workout";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -583,6 +594,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = workout/workout.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
@@ -592,19 +605,21 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
-				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "workout-app.workout";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -619,10 +634,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "workout-app.workoutTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlogTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
@@ -639,10 +655,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "workout-app.workoutTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlogTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
@@ -658,9 +675,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "workout-app.workoutUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlogUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
@@ -676,9 +695,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "workout-app.workoutUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlogUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
@@ -737,7 +758,28 @@
 				minimumVersion = 12.14.0;
 			};
 		};
+		FA9C73142F1CA59A00441491 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FA9C73152F1CA59A00441491 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA9C73142F1CA59A00441491 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		FA9C73172F1CA59A00441492 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA9C73142F1CA59A00441491 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FA301B412F05FB720005BF68 /* Project object */;
 }

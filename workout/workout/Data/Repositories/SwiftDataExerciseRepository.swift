@@ -46,7 +46,7 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
         guard let exercise = fetch(id: id) else {
             return nil
         }
-        for existingSet in exercise.sets {
+        for existingSet in exercise.sets ?? [] {
             modelContext.delete(existingSet)
         }
         for set in sets {
@@ -63,7 +63,7 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
             return false
         }
         var recordDescriptor = FetchDescriptor<RecordHeader>(
-            predicate: #Predicate { $0.exercise.id == id }
+            predicate: #Predicate { $0.exercise?.id == id }
         )
         recordDescriptor.fetchLimit = 1
         if let existing = try? modelContext.fetch(recordDescriptor), !existing.isEmpty {

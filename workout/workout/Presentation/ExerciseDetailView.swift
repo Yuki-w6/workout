@@ -205,7 +205,7 @@ struct ExerciseDetailView: View {
             return
         }
         if let record = fetchRecordHeader(for: date) {
-            let sortedDetails = record.details.sorted { $0.setNumber < $1.setNumber }
+            let sortedDetails = (record.details ?? []).sorted { $0.setNumber < $1.setNumber }
             if let firstUnit = sortedDetails.first?.weightUnit {
                 unit = firstUnit
                 lastWeightUnitRaw = firstUnit.rawValue
@@ -549,7 +549,7 @@ private extension ExerciseDetailView {
         let header: RecordHeader
         if let existing = fetchRecordHeader(for: targetDate) {
             header = existing
-            for detail in existing.details {
+            for detail in existing.details ?? [] {
                 modelContext.delete(detail)
             }
         } else {
@@ -590,7 +590,7 @@ private extension ExerciseDetailView {
     func fetchRecordHeader(for date: Date) -> RecordHeader? {
         let targetDate = calendar.startOfDay(for: date)
         var descriptor = FetchDescriptor<RecordHeader>(
-            predicate: #Predicate { $0.exercise.id == exerciseID && $0.date == targetDate }
+            predicate: #Predicate { $0.exercise?.id == exerciseID && $0.date == targetDate }
         )
         descriptor.fetchLimit = 1
         return (try? modelContext.fetch(descriptor))?.first
@@ -599,7 +599,7 @@ private extension ExerciseDetailView {
     func fetchPastRecordHeaders(before date: Date) -> [RecordHeader] {
         let targetDate = calendar.startOfDay(for: date)
         let descriptor = FetchDescriptor<RecordHeader>(
-            predicate: #Predicate { $0.exercise.id == exerciseID && $0.date < targetDate },
+            predicate: #Predicate { $0.exercise?.id == exerciseID && $0.date < targetDate },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         return (try? modelContext.fetch(descriptor)) ?? []

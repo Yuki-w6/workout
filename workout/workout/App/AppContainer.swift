@@ -11,12 +11,27 @@ final class AppContainer {
         exerciseRepository = SwiftDataExerciseRepository(modelContext: modelContext)
     }
 
-    static func make() throws -> AppContainer {
+    static func make() throws -> (container: AppContainer, warningMessage: String?) {
         let schema = Schema([Exercise.self, ExerciseSet.self, RecordHeader.self, RecordDetail.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        let modelContainer = try ModelContainer(for: schema, configurations: [configuration])
-        seedExercisesIfNeeded(using: modelContainer)
-        return AppContainer(modelContainer: modelContainer)
+        do {
+            let configuration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .private("iCloud.com.mayamayk.workoutlog")
+            )
+            let modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+            seedExercisesIfNeeded(using: modelContainer)
+            return (AppContainer(modelContainer: modelContainer), nil)
+        } catch {
+            print("CloudKit fallback:", error)
+            let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            let modelContainer = try ModelContainer(for: schema, configurations: [fallbackConfiguration])
+            seedExercisesIfNeeded(using: modelContainer)
+            return (
+                AppContainer(modelContainer: modelContainer),
+                "iCloud同期に失敗したため、ローカルデータで起動しました。"
+            )
+        }
     }
 
     private static func seedExercisesIfNeeded(using modelContainer: ModelContainer) {
