@@ -1,1 +1,3 @@
 workout/Config/Secrets.xcconfig
+workout/GoogleService-Info.plist
+workout.xcodeproj/xcuserdata/
