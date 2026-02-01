@@ -4,6 +4,10 @@ struct FetchExerciseUseCase {
     let repository: ExerciseRepository
 
     func execute(id: UUID) -> Exercise? {
-        repository.fetch(id: id)
+        do {
+            return try repository.fetch(by: id)
+        } catch {
+            return nil
+        }
     }
 }

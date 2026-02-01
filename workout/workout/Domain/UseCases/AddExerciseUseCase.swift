@@ -8,6 +8,16 @@ struct AddExerciseUseCase {
     }
 
     func execute(name: String, bodyPart: BodyPart) -> Exercise {
-        repository.addExercise(name: name, bodyPart: bodyPart)
+        let exercise = Exercise(
+            name: name,
+            bodyPart: bodyPart,
+            defaultWeightUnit: .kg
+        )
+        do {
+            try repository.upsert(exercise)
+        } catch {
+            // noop
+        }
+        return exercise
     }
 }

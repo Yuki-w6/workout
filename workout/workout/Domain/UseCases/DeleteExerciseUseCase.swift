@@ -4,6 +4,11 @@ struct DeleteExerciseUseCase {
     let repository: ExerciseRepository
 
     func execute(id: UUID) -> Bool {
-        repository.deleteExercise(id: id)
+        do {
+            try repository.archive(id)
+            return true
+        } catch {
+            return false
+        }
     }
 }

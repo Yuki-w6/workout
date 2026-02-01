@@ -21,7 +21,7 @@ struct ExerciseRecordPredictor {
 
         let sortedRecords = records.sorted { $0.date < $1.date }
         for record in sortedRecords {
-            let details = (record.details ?? []).sorted { $0.setNumber < $1.setNumber }
+            let details = (record.sets ?? []).sorted { $0.setNumber < $1.setNumber }
                 .filter { $0.weightUnit == unit }
             for detail in details {
                 if detail.weight > 0 {

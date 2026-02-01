@@ -2,30 +2,38 @@ import Foundation
 import SwiftData
 
 @Model
-final class RecordDetail {
+final class RecordSet {
     var id: UUID = UUID()
-    var header: RecordHeader?
     var setNumber: Int = 0
+    
     var weight: Double = 0
-    var weightUnit: WeightUnit = WeightUnit.kg
+    var weightUnitRaw: String = WeightUnit.kg.rawValue
     var repetitions: Int = 0
     var memo: String?
-
+    
+    @Relationship
+    var header: RecordHeader? = nil
+    
     init(
         id: UUID = UUID(),
-        header: RecordHeader,
         setNumber: Int,
         weight: Double,
         weightUnit: WeightUnit,
         repetitions: Int,
-        memo: String? = nil
+        memo: String? = nil,
+        header: RecordHeader
     ) {
         self.id = id
-        self.header = header
         self.setNumber = setNumber
         self.weight = weight
-        self.weightUnit = weightUnit
+        self.weightUnitRaw = weightUnit.rawValue
         self.repetitions = repetitions
         self.memo = memo
+        self.header = header
+    }
+    
+    var weightUnit: WeightUnit {
+        get { WeightUnit(rawValue: weightUnitRaw) ?? .kg }
+        set { weightUnitRaw = newValue.rawValue }
     }
 }

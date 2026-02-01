@@ -37,7 +37,6 @@ struct SettingsSideSheet: View {
                         systemImage: "questionmark.circle",
                         urlString: "https://celestial-estimate-0db.notion.site/2e5540c9e67280dcbc80f99d961593db"
                     )
-                    settingsButton(title: "データの削除", systemImage: "trash")
 
                     Spacer()
                 }
@@ -78,4 +77,6 @@ struct SettingsSideSheet: View {
             .foregroundStyle(actionLabelColor)
         }
     }
+
+
 }

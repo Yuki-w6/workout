@@ -205,7 +205,7 @@ struct ExerciseDetailView: View {
             return
         }
         if let record = fetchRecordHeader(for: date) {
-            let sortedDetails = (record.details ?? []).sorted { $0.setNumber < $1.setNumber }
+            let sortedDetails = (record.sets ?? []).sorted { $0.setNumber < $1.setNumber }
             if let firstUnit = sortedDetails.first?.weightUnit {
                 unit = firstUnit
                 lastWeightUnitRaw = firstUnit.rawValue
@@ -219,8 +219,16 @@ struct ExerciseDetailView: View {
                 setInitialFocus(toLastSet: true)
             }
         } else {
-            unit = WeightUnit(rawValue: lastWeightUnitRaw) ?? exercise.weightUnit
-            sets = ExerciseSetInput.defaultSets()
+            unit = WeightUnit(rawValue: lastWeightUnitRaw) ?? exercise.defaultWeightUnit
+            let templateSets = fetchTemplateSets(for: exercise)
+            if templateSets.isEmpty {
+                sets = ExerciseSetInput.defaultSets()
+            } else {
+                sets = templateSets.map { ExerciseSetInput(from: $0) }
+            }
+            if sets.last.map(isEmptySet) != true {
+                sets.append(ExerciseSetInput())
+            }
             if focusAfterLoad {
                 setInitialFocus(toLastSet: false)
             }
@@ -228,11 +236,11 @@ struct ExerciseDetailView: View {
     }
 
     private func saveRecord(for date: Date) {
-        let savedSets = sets.enumerated().map { index, input in
-            ExerciseSet(order: index, weight: input.weight, reps: input.reps, memo: input.memo)
+        guard let exercise = fetchExerciseForRecord() else {
+            return
         }
-        viewModel.updateExerciseRecord(id: exerciseID, unit: unit, sets: savedSets)
-        saveWorkoutRecord(for: date)
+        saveTemplateSets(for: exercise)
+        saveWorkoutRecord(for: date, exercise: exercise)
     }
 
     private func handleRecordDateChange(to newDate: Date) {
@@ -468,16 +476,20 @@ private struct ExerciseSetInput: Identifiable {
 
     init() {}
 
-    init(from set: ExerciseSet) {
-        weight = set.weight
-        reps = set.reps
-        memo = set.memo
+    init(from template: ExerciseTemplateSet) {
+        if let weight = template.weight, weight > 0 {
+            self.weight = String(weight)
+        }
+        if let reps = template.reps, reps > 0 {
+            self.reps = String(reps)
+        }
+        memo = template.memo ?? ""
     }
 
-    init(from detail: RecordDetail) {
-        weight = detail.weight == 0 ? "" : String(detail.weight)
-        reps = detail.repetitions == 0 ? "" : String(detail.repetitions)
-        memo = detail.memo ?? ""
+    init(from recordSet: RecordSet) {
+        weight = recordSet.weight == 0 ? "" : String(recordSet.weight)
+        reps = recordSet.repetitions == 0 ? "" : String(recordSet.repetitions)
+        memo = recordSet.memo ?? ""
     }
 
     static func defaultSets() -> [ExerciseSetInput] {
@@ -490,7 +502,7 @@ private struct RecordInputFieldModifier: ViewModifier {
         content
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(Color(.tertiarySystemBackground))
+            .background(Color(.tertiarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
@@ -524,12 +536,41 @@ private extension ExerciseDetailView {
         set.weight.isEmpty && set.reps.isEmpty && set.memo.isEmpty
     }
 
-    func saveWorkoutRecord(for date: Date) {
+    func fetchTemplateSets(for exercise: Exercise) -> [ExerciseTemplateSet] {
+        let exerciseID = exercise.id
+        let descriptor = FetchDescriptor<ExerciseTemplateSet>(
+            predicate: #Predicate { $0.exercise?.id == exerciseID },
+            sortBy: [SortDescriptor(\.order, order: .forward)]
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    func saveTemplateSets(for exercise: Exercise) {
+        exercise.defaultWeightUnit = unit
+
+        let existing = fetchTemplateSets(for: exercise)
+        for template in existing {
+            modelContext.delete(template)
+        }
+
+        let newTemplates = sets.enumerated().map { index, input in
+            ExerciseTemplateSet(
+                order: index,
+                weight: Double(input.weight),
+                reps: Int(input.reps),
+                memo: input.memo.isEmpty ? nil : input.memo,
+                exercise: exercise
+            )
+        }
+        for template in newTemplates {
+            modelContext.insert(template)
+        }
+        saveContext()
+    }
+
+    func saveWorkoutRecord(for date: Date, exercise: Exercise) {
         let trimmedSets = sets.filter { input in
             !(input.weight.isEmpty && input.reps.isEmpty && input.memo.isEmpty)
-        }
-        guard let exercise = fetchExerciseForRecord() else {
-            return
         }
         let targetDate = calendar.startOfDay(for: date)
         let originalDate = originalRecordDate.map { calendar.startOfDay(for: $0) }
@@ -549,28 +590,28 @@ private extension ExerciseDetailView {
         let header: RecordHeader
         if let existing = fetchRecordHeader(for: targetDate) {
             header = existing
-            for detail in existing.details ?? [] {
-                modelContext.delete(detail)
+            for recordSet in existing.sets ?? [] {
+                modelContext.delete(recordSet)
             }
         } else {
             header = RecordHeader(date: targetDate, exercise: exercise)
             modelContext.insert(header)
         }
 
-        let details = trimmedSets.enumerated().map { index, input in
-            RecordDetail(
-                header: header,
+        let recordSets = trimmedSets.enumerated().map { index, input in
+            RecordSet(
                 setNumber: index + 1,
                 weight: Double(input.weight) ?? 0,
                 weightUnit: unit,
                 repetitions: Int(input.reps) ?? 0,
-                memo: input.memo.isEmpty ? nil : input.memo
+                memo: input.memo.isEmpty ? nil : input.memo,
+                header: header
             )
         }
-        for detail in details {
-            modelContext.insert(detail)
+        for recordSet in recordSets {
+            modelContext.insert(recordSet)
         }
-        header.details = details
+        header.sets = recordSets
         if !isNewRecord, let originalDate, originalDate != targetDate,
            let originalHeader = fetchRecordHeader(for: originalDate) {
             modelContext.delete(originalHeader)
@@ -590,7 +631,7 @@ private extension ExerciseDetailView {
     func fetchRecordHeader(for date: Date) -> RecordHeader? {
         let targetDate = calendar.startOfDay(for: date)
         var descriptor = FetchDescriptor<RecordHeader>(
-            predicate: #Predicate { $0.exercise?.id == exerciseID && $0.date == targetDate }
+            predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID && $0.date == targetDate }
         )
         descriptor.fetchLimit = 1
         return (try? modelContext.fetch(descriptor))?.first
@@ -599,7 +640,7 @@ private extension ExerciseDetailView {
     func fetchPastRecordHeaders(before date: Date) -> [RecordHeader] {
         let targetDate = calendar.startOfDay(for: date)
         let descriptor = FetchDescriptor<RecordHeader>(
-            predicate: #Predicate { $0.exercise?.id == exerciseID && $0.date < targetDate },
+            predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID && $0.date < targetDate },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         return (try? modelContext.fetch(descriptor)) ?? []

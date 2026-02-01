@@ -16,7 +16,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct workoutApp: App {
     @StateObject private var appState = AppState()
+    @StateObject private var ads = AdsInitializer()
+    @StateObject private var seeder = AppSeeder()
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
     
     init() {
         let pink = UIColor(red: 0.992, green: 0.294, blue: 0.004, alpha: 1.0)
@@ -43,12 +46,27 @@ struct workoutApp: App {
                     fetchExercise: FetchExerciseUseCase(repository: repository),
                     addExercise: AddExerciseUseCase(repository: repository),
                     updateExercise: UpdateExerciseUseCase(repository: repository),
-                    updateExerciseRecord: UpdateExerciseRecordUseCase(repository: repository),
                     deleteExercise: DeleteExerciseUseCase(repository: repository)
                 )
                 ZStack(alignment: .top) {
                     ContentView(viewModel: viewModel)
                         .modelContainer(container.modelContainer)
+                        .disabled(appState.isImporting)
+                        .task {
+                            #if DEBUG
+                            // Xcode Preview 判定（環境変数）
+                            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                                return
+                            }
+                            #endif
+                            
+                            seeder.runIfNeeded(modelContainer: container.modelContainer)
+                            
+                            // AdsInitializer は @MainActor なので MainActor 上で呼ぶ
+                            await MainActor.run {
+                                ads.startIfNeeded()
+                            }
+                        }
 
                     if let warningMessage = appState.warningMessage {
                         HStack(spacing: 12) {
@@ -72,6 +90,13 @@ struct workoutApp: App {
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
                     }
+                    if appState.isImporting {
+                        ZStack {
+                            Color.black.opacity(0.2)
+                                .ignoresSafeArea()
+                            SyncSkeletonView(title: statusMessage)
+                        }
+                    }
                 }
             } else if let errorMessage = appState.errorMessage {
                 VStack(spacing: 12) {
@@ -94,6 +119,45 @@ struct workoutApp: App {
             }
         }
     }
+
+    private var statusMessage: String {
+        if appState.isImporting {
+            return "引き継ぎ中..."
+        }
+        return "初期化中..."
+    }
+}
+
+private struct SyncSkeletonView: View {
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .frame(height: 18)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .frame(height: 18)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .frame(height: 18)
+            }
+            .redacted(reason: .placeholder)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .frame(height: 120)
+                .redacted(reason: .placeholder)
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 20)
+        .frame(maxWidth: 300, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(radius: 6)
+        )
+    }
 }
 
 @MainActor
@@ -102,18 +166,20 @@ private final class AppState: ObservableObject {
     @Published var errorMessage: String?
     @Published var cloudKitStatusMessage: String?
     @Published var warningMessage: String?
+    @Published var isImporting = false
+    @Published var isCloudAvailable = false
 
     init() {
         Task { await loadContainer() }
     }
 
     func loadContainer() async {
-        await updateCloudKitStatus()
         errorMessage = nil
         do {
-            let result = try AppContainer.make()
+            let result = try AppContainer.make(useCloud: false)
             self.container = result.container
             warningMessage = result.warningMessage
+            isCloudAvailable = false
         } catch {
             self.container = nil
             warningMessage = nil
@@ -124,25 +190,4 @@ private final class AppState: ObservableObject {
         }
     }
 
-    private func updateCloudKitStatus() async {
-        do {
-            let status = try await CKContainer(identifier: "iCloud.com.mayamayk.workoutlog").accountStatus()
-            switch status {
-            case .available:
-                cloudKitStatusMessage = nil
-            case .noAccount:
-                cloudKitStatusMessage = "iCloudにサインインしてください。"
-            case .restricted:
-                cloudKitStatusMessage = "iCloudが制限されています。スクリーンタイム等をご確認ください。"
-            case .couldNotDetermine:
-                cloudKitStatusMessage = "iCloudの状態を確認できませんでした。"
-            case .temporarilyUnavailable:
-                cloudKitStatusMessage = "iCloudが一時的に利用できません。"
-            @unknown default:
-                cloudKitStatusMessage = "iCloudの状態を確認できませんでした。"
-            }
-        } catch {
-            cloudKitStatusMessage = "iCloudの状態取得に失敗しました。"
-        }
-    }
 }

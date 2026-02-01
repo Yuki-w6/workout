@@ -7,7 +7,11 @@ struct FetchExercisesUseCase {
         self.repository = repository
     }
 
-    func execute() -> [Exercise] {
-        repository.fetchAll()
+    func execute(includeArchived: Bool = false) -> [Exercise] {
+        do {
+            return try repository.fetchAll(includeArchived: includeArchived)
+        } catch {
+            return []
+        }
     }
 }

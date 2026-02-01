@@ -32,7 +32,9 @@ struct GraphView: View {
         .shoulders,
         .arms,
         .glutes,
-        .core
+        .core,
+        .fullBody,
+        .other
     ]
 
     var body: some View {
@@ -215,7 +217,7 @@ struct GraphView: View {
             return nil
         }
         let dates = records
-            .filter { $0.exercise?.id == exercise.id }
+            .filter { $0.exerciseIDSnapshot == exercise.id }
             .map { calendar.startOfDay(for: $0.date) }
         guard let minDate = dates.min(), let maxDate = dates.max() else {
             return nil
@@ -228,9 +230,9 @@ struct GraphView: View {
         guard let exercise = selectedExercise else {
             return .empty
         }
-        let unit = exercise.weightUnit
+        let unit = exercise.defaultWeightUnit
         let filtered = records.filter { record in
-            record.exercise?.id == exercise.id
+            record.exerciseIDSnapshot == exercise.id
         }
         let grouped = Dictionary(grouping: filtered, by: { record in
             calendar.startOfDay(for: record.date)
@@ -242,7 +244,7 @@ struct GraphView: View {
         var maxWeightPoints: [MetricPoint] = []
 
         for date in dates {
-            let details = grouped[date]?.flatMap { $0.details ?? [] } ?? []
+            let details = grouped[date]?.flatMap { $0.sets ?? [] } ?? []
             guard !details.isEmpty else {
                 continue
             }
@@ -322,14 +324,14 @@ struct GraphView: View {
                             .opacity(isSelectionLayoutReady ? 1 : 0)
                             .position(x: clampedX, y: proxy.size.height / 2)
                     }
-                } else if let average = visibleAverageValue(in: xRange, points: points) {
+                } else if let maxValue = visibleMaxValue(in: xRange, points: points) {
                     VStack(alignment: .leading, spacing: 4) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("平均")
+                            Text("最大")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(formattedValue(average))
+                                Text(formattedValue(maxValue))
                                     .font(.system(size: 34, weight: .semibold))
                                 Text(displayUnitLabel)
                                     .font(.subheadline.weight(.semibold))
@@ -527,7 +529,7 @@ struct GraphView: View {
             return weight
         }
         let poundsPerKilogram = 2.20462
-        if from == .kg && to == .lbs {
+        if from == .kg && to == .lb {
             return weight * poundsPerKilogram
         }
         return weight / poundsPerKilogram
@@ -589,7 +591,7 @@ struct GraphView: View {
     }
 
     private var displayUnitLabel: String {
-        selectedExercise?.weightUnit.rawValue ?? "kg"
+        selectedExercise?.defaultWeightUnit.rawValue ?? "kg"
     }
 
     private func visiblePeriodLabel(in range: ClosedRange<Date>) -> String {
@@ -600,7 +602,7 @@ struct GraphView: View {
         return formattedPeriodLabel(lower: lower, upper: upper)
     }
 
-    private func visibleAverageValue(in range: ClosedRange<Date>, points: [MetricPoint]) -> Double? {
+    private func visibleMaxValue(in range: ClosedRange<Date>, points: [MetricPoint]) -> Double? {
         let resolvedRange = clampedVisibleRange(in: range)
         let filtered = points.filter { point in
             let date = plotDate(for: point)
@@ -609,8 +611,7 @@ struct GraphView: View {
         guard !filtered.isEmpty else {
             return nil
         }
-        let total = filtered.reduce(0.0) { $0 + $1.value }
-        return total / Double(filtered.count)
+        return filtered.map(\.value).max()
     }
 
     private func selectionSummaryView(for point: MetricPoint) -> some View {
@@ -969,6 +970,59 @@ struct GraphView: View {
         point.range?.end ?? point.date
     }
 
+}
+
+#Preview {
+    let schema = Schema([Exercise.self, ExerciseTemplateSet.self, RecordHeader.self, RecordSet.self])
+    let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: schema, configurations: [configuration])
+    let context = ModelContext(container)
+
+    let benchPress = Exercise(name: "ベンチプレス", bodyPart: .chest, defaultWeightUnit: .kg)
+    let latPulldown = Exercise(name: "ラットプルダウン", bodyPart: .back, defaultWeightUnit: .kg)
+    context.insert(benchPress)
+    context.insert(latPulldown)
+
+    let calendar = Calendar(identifier: .gregorian)
+    func addRecord(exercise: Exercise, dayOffset: Int, sets: [(Double, Int)]) {
+        guard let date = calendar.date(byAdding: .day, value: dayOffset, to: Date()) else {
+            return
+        }
+        let startDate = calendar.startOfDay(for: date)
+        let header = RecordHeader(date: startDate, exercise: exercise)
+        context.insert(header)
+        let recordSets = sets.enumerated().map { index, set in
+            RecordSet(
+                setNumber: index + 1,
+                weight: set.0,
+                weightUnit: .kg,
+                repetitions: set.1,
+                header: header
+            )
+        }
+        recordSets.forEach { context.insert($0) }
+        header.sets = recordSets
+    }
+
+    addRecord(exercise: benchPress, dayOffset: -14, sets: [(50, 10), (50, 10), (50, 8)])
+    addRecord(exercise: benchPress, dayOffset: -10, sets: [(55, 10), (55, 8), (55, 8)])
+    addRecord(exercise: benchPress, dayOffset: -7, sets: [(60, 8), (60, 8), (60, 6)])
+    addRecord(exercise: benchPress, dayOffset: -3, sets: [(62.5, 8), (62.5, 7), (62.5, 6)])
+    addRecord(exercise: benchPress, dayOffset: -1, sets: [(65, 6), (65, 6), (65, 5)])
+
+    try? context.save()
+
+    let repository = SwiftDataExerciseRepository(context: context)
+    let viewModel = ExerciseListViewModel(
+        fetchExercises: FetchExercisesUseCase(repository: repository),
+        fetchExercise: FetchExerciseUseCase(repository: repository),
+        addExercise: AddExerciseUseCase(repository: repository),
+        updateExercise: UpdateExerciseUseCase(repository: repository),
+        deleteExercise: DeleteExerciseUseCase(repository: repository)
+    )
+
+    return GraphView(viewModel: viewModel)
+        .modelContainer(container)
 }
 
 private struct ValueLabelSizeKey: PreferenceKey {

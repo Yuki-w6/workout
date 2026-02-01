@@ -27,86 +27,51 @@ struct RecordListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                HStack {
-                    Button {
-                        shiftMonth(by: -1)
-                    } label: {
-                        Image(systemName: "chevron.left")
+            Group {
+                VStack(spacing: 12) {
+                    HStack {
+                        Button {
+                            shiftMonth(by: -1)
+                        } label: {
+                            Image(systemName: "chevron.left")
+                        }
+                        Spacer()
+                        Text(monthTitle(for: monthStart))
+                            .font(.headline)
+                        Spacer()
+                        Button {
+                            shiftMonth(by: 1)
+                        } label: {
+                            Image(systemName: "chevron.right")
+                        }
                     }
-                    Spacer()
-                    Text(monthTitle(for: monthStart))
-                        .font(.headline)
-                    Spacer()
-                    Button {
-                        shiftMonth(by: 1)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                    }
-                }
-                .padding(.horizontal)
+                    .padding(.horizontal)
 
-                CalendarMonthView(
-                    month: monthStart,
-                    selectedDate: $selectedDate,
-                    markedDates: markedDates
-                )
-                .padding(.horizontal)
+                    CalendarMonthView(
+                        month: monthStart,
+                        selectedDate: $selectedDate,
+                        markedDates: markedDates
+                    )
+                    .padding(.horizontal)
 
-                List {
-                    if recordsForSelectedDate.isEmpty {
-                        Text("記録はありません")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(recordsForSelectedDate, id: \.id) { record in
-                            if let exercise = record.exercise {
-                                Section(exercise.name) {
-                                    let sortedDetails = (record.details ?? []).sorted { $0.setNumber < $1.setNumber }
-                                    ForEach(sortedDetails, id: \.id) { detail in
-                                        NavigationLink {
-                                            ExerciseDetailView(
-                                                viewModel: viewModel,
-                                                exerciseID: exercise.id,
-                                                isNewRecord: false,
-                                                initialDate: record.date,
-                                                onSave: { message in
-                                                    showToast(message)
-                                                }
-                                            )
-                                        } label: {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text("セット\(detail.setNumber)")
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                                Text("\(detail.weight, specifier: "%.1f") \(detail.weightUnit.rawValue) × \(detail.repetitions)回")
-                                                    .font(.headline)
-                                                if let memo = detail.memo, !memo.isEmpty {
-                                                    Text(memo)
-                                                        .font(.footnote)
-                                                        .foregroundStyle(.secondary)
-                                                }
-                                            }
-                                            .padding(.vertical, 4)
-                                        }
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                            Button(role: .destructive) {
-                                                deleteDetail(detail, in: record)
-                                            } label: {
-                                                Label("削除", systemImage: "trash")
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                Section("種目不明") {
-                                    Text("関連する種目が見つかりません。")
-                                        .foregroundStyle(.secondary)
-                                }
+                    List {
+                        if recordsForSelectedDate.isEmpty {
+                            Text("記録はありません")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(recordsForSelectedDate, id: \.id) { record in
+                                RecordSection(
+                                    record: record,
+                                    viewModel: viewModel,
+                                    onDelete: deleteDetail(_:in:),
+                                    onToast: showToast(_:)
+                                )
                             }
                         }
                     }
+                    .listStyle(.insetGrouped)
                 }
-                .listStyle(.insetGrouped)
+                .padding(.top, 20)
             }
             .toast(message: toastMessage, isPresented: $isToastPresented)
             .safeAreaInset(edge: .bottom) {
@@ -114,6 +79,7 @@ struct RecordListView: View {
                     BannerAdView(adUnitID: adUnitID)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
+                        .padding(.horizontal, 16)
                 }
             }
         }
@@ -126,8 +92,8 @@ struct RecordListView: View {
         }
     }
 
-    private func deleteDetail(_ detail: RecordDetail, in record: RecordHeader) {
-        var details = record.details ?? []
+    private func deleteDetail(_ detail: RecordSet, in record: RecordHeader) {
+        var details = record.sets ?? []
         if let index = details.firstIndex(where: { $0.id == detail.id }) {
             details.remove(at: index)
         }
@@ -139,7 +105,7 @@ struct RecordListView: View {
             for (index, item) in sorted.enumerated() {
                 item.setNumber = index + 1
             }
-            record.details = sorted
+            record.sets = sorted
         }
         do {
             try modelContext.save()
@@ -240,6 +206,60 @@ private struct CalendarMonthView: View {
     }
 }
 
+private struct RecordSection: View {
+    let record: RecordHeader
+    let viewModel: ExerciseListViewModel
+    let onDelete: (RecordSet, RecordHeader) -> Void
+    let onToast: (String) -> Void
+
+    private var exerciseName: String {
+        let name = record.exercise?.name ?? record.exerciseNameSnapshot
+        return name.isEmpty ? "種目不明" : name
+    }
+
+    private var sortedDetails: [RecordSet] {
+        (record.sets ?? []).sorted { $0.setNumber < $1.setNumber }
+    }
+
+    var body: some View {
+        Section(exerciseName) {
+            ForEach(sortedDetails, id: \.id) { detail in
+                NavigationLink {
+                    ExerciseDetailView(
+                        viewModel: viewModel,
+                        exerciseID: record.exerciseIDSnapshot,
+                        isNewRecord: false,
+                        initialDate: record.date,
+                        onSave: { message in
+                            onToast(message)
+                        }
+                    )
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("セット\(detail.setNumber)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text("\(detail.weight, specifier: "%.1f") \(detail.weightUnit.rawValue) × \(detail.repetitions)回")
+                            .font(.headline)
+                        if let memo = detail.memo, !memo.isEmpty {
+                            Text(memo)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        onDelete(detail, record)
+                    } label: {
+                        Label("削除", systemImage: "trash")
+                    }
+                }
+            }
+        }
+    }
+}
 private extension Calendar {
     static var japaneseLocale: Calendar {
         var calendar = Calendar(identifier: .gregorian)

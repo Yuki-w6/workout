@@ -8,7 +8,6 @@ final class ExerciseListViewModel: ObservableObject {
     private let fetchExerciseUseCase: FetchExerciseUseCase
     private let addExercise: AddExerciseUseCase
     private let updateExerciseUseCase: UpdateExerciseUseCase
-    private let updateExerciseRecordUseCase: UpdateExerciseRecordUseCase
     private let deleteExerciseUseCase: DeleteExerciseUseCase
 
     init(
@@ -16,14 +15,12 @@ final class ExerciseListViewModel: ObservableObject {
         fetchExercise: FetchExerciseUseCase,
         addExercise: AddExerciseUseCase,
         updateExercise: UpdateExerciseUseCase,
-        updateExerciseRecord: UpdateExerciseRecordUseCase,
         deleteExercise: DeleteExerciseUseCase
     ) {
         self.fetchExercises = fetchExercises
         self.fetchExerciseUseCase = fetchExercise
         self.addExercise = addExercise
         self.updateExerciseUseCase = updateExercise
-        self.updateExerciseRecordUseCase = updateExerciseRecord
         self.deleteExerciseUseCase = deleteExercise
     }
 
@@ -42,11 +39,6 @@ final class ExerciseListViewModel: ObservableObject {
 
     func updateExercise(id: UUID, name: String, bodyPart: BodyPart) {
         _ = updateExerciseUseCase.execute(id: id, name: name, bodyPart: bodyPart)
-        load()
-    }
-
-    func updateExerciseRecord(id: UUID, unit: WeightUnit, sets: [ExerciseSet]) {
-        _ = updateExerciseRecordUseCase.execute(id: id, unit: unit, sets: sets)
         load()
     }
 

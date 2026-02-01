@@ -13,6 +13,7 @@ struct ExerciseListView: View {
     @State private var toastMessage = ""
     @State private var isToastPresented = false
     @State private var isSettingsPresented = false
+    @State private var isSyncing = false
     private let bannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "BannerAdUnitID") as? String
     private var actionLabelColor: Color { .secondary }
 
@@ -23,14 +24,17 @@ struct ExerciseListView: View {
         (.shoulders, "肩"),
         (.arms, "腕"),
         (.glutes, "お尻"),
-        (.core, "お腹")
+        (.core, "お腹"),
+        (.fullBody, "全身"),
+        (.other, "その他")
     ]
 
     private var filteredExercises: [Exercise] {
+        let visibleExercises = viewModel.exercises
         guard !searchText.isEmpty else {
-            return viewModel.exercises
+            return visibleExercises
         }
-        return viewModel.exercises.filter { exercise in
+        return visibleExercises.filter { exercise in
             exercise.name.localizedCaseInsensitiveContains(searchText)
         }
     }
@@ -42,9 +46,16 @@ struct ExerciseListView: View {
     var body: some View {
         ZStack {
             NavigationStack {
-                listContent
+                Group {
+                    if isSyncing && viewModel.exercises.isEmpty {
+                        skeletonContent
+                    } else {
+                        listContent
+                    }
+                }
                     .onAppear {
                         viewModel.load()
+                        refreshSyncingState()
                     }
                     .alert("種目名を変更", isPresented: $isEditAlertPresented) {
                         TextField("種目名", text: $draftExerciseName)
@@ -113,6 +124,9 @@ struct ExerciseListView: View {
 
             SettingsSideSheet(isPresented: $isSettingsPresented)
         }
+        .onAppear {
+            refreshSyncingState()
+        }
     }
 
     private var searchBar: some View {
@@ -148,7 +162,7 @@ struct ExerciseListView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color(.secondarySystemGroupedBackground))
         )
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -171,6 +185,55 @@ struct ExerciseListView: View {
                 }
             }
         }
+    }
+
+    private var skeletonContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(0..<3, id: \.self) { index in
+                    VStack(alignment: .leading, spacing: 6) {
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(Color(.tertiarySystemFill))
+                                .frame(width: 32, height: 8)
+                        }
+                        .frame(height: 14, alignment: .center)
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(0..<3, id: \.self) { index in
+                                ZStack(alignment: .bottomLeading) {
+                                    ZStack(alignment: .leading) {
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(Color(.tertiarySystemFill))
+                                            .frame(width: 200, height: 28)
+                                    }
+                                    .frame(height: 52, alignment: .center)
+                                    if index < 2 {
+                                        Divider()
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .padding(.top, index == 0 ? 0 : 3)
+                    .padding(.bottom, index == 2 ? 0 : 3)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 0)
+            .padding(.bottom, 0)
+        }
+        .redacted(reason: .placeholder)
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private func refreshSyncingState() {
+        isSyncing = false
+        viewModel.load()
     }
 
     @ViewBuilder
