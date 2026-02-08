@@ -1,2 +1,2 @@
-#include "../../Pods/Target Support Files/Pods-workout/Pods-workout.release.xcconfig"
+#include "/Users/mayamayk/projects/workout/workout/Pods/Target Support Files/Pods-workout/Pods-workout.release.xcconfig"
 #include "Secrets.xcconfig"
