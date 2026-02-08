@@ -19,7 +19,6 @@ struct ExerciseDetailView: View {
     @State private var recordDate = Date()
     @State private var lastLoadedDate = Date()
     @State private var originalRecordDate: Date?
-    @State private var showNoPredictionAlert = false
     @State private var scrollToSetIndex: Int?
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
@@ -39,7 +38,6 @@ struct ExerciseDetailView: View {
         formatter.maximumFractionDigits = 1
         return formatter
     }()
-    private let predictor = ExerciseRecordPredictor()
 
     init(
         viewModel: ExerciseListViewModel,
@@ -135,21 +133,19 @@ struct ExerciseDetailView: View {
                 }
                 .accessibilityLabel("記録を保存")
             }
-            ToolbarItemGroup(placement: .keyboard) {
-                Button("AI入力") {
-                    applyPrediction()
+            ToolbarItem(placement: .keyboard) {
+                HStack(spacing: 12) {
+                    Spacer()
+                    Button("<") {
+                        focusPreviousField()
+                    }
+                    .keyboardButtonStyle()
+                    Button(">") {
+                        focusNextField()
+                    }
+                    .keyboardButtonStyle()
                 }
-                .accessibilityLabel("AI入力")
-                .keyboardButtonStyle()
-                Spacer()
-                Button("<") {
-                    focusPreviousField()
-                }
-                .keyboardButtonStyle()
-                Button(">") {
-                    focusNextField()
-                }
-                .keyboardButtonStyle()
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .sheet(isPresented: $isEditing) {
@@ -181,11 +177,6 @@ struct ExerciseDetailView: View {
                     }
                 }
             }
-        }
-        .alert("AI入力", isPresented: $showNoPredictionAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("過去に記録がないため、数値を予測することができませんでした。")
         }
         .onAppear {
             let baseDate = initialDate ?? Date()
@@ -640,38 +631,6 @@ private extension ExerciseDetailView {
         return (try? modelContext.fetch(descriptor))?.first
     }
 
-    func fetchPastRecordHeaders(before date: Date) -> [RecordHeader] {
-        let targetDate = calendar.startOfDay(for: date)
-        let descriptor = FetchDescriptor<RecordHeader>(
-            predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID && $0.date < targetDate },
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    func applyPrediction() {
-        let pastRecords = fetchPastRecordHeaders(before: recordDate)
-        let predictions = predictor.predict(records: pastRecords, unit: unit, maxSetNumber: sets.count)
-        guard !predictions.isEmpty else {
-            showNoPredictionAlert = true
-            return
-        }
-
-        var updatedSets = sets
-        for index in updatedSets.indices {
-            let setNumber = index + 1
-            guard let prediction = predictions[setNumber] else {
-                continue
-            }
-            if updatedSets[index].weight.isEmpty, let weight = prediction.weight {
-                updatedSets[index].weight = formatWeight(weight)
-            }
-            if updatedSets[index].reps.isEmpty, let reps = prediction.reps {
-                updatedSets[index].reps = String(reps)
-            }
-        }
-        sets = updatedSets
-    }
 
     func formatWeight(_ weight: Double) -> String {
         let rounded = (weight * 2).rounded() / 2
