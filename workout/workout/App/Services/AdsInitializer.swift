@@ -32,18 +32,21 @@ final class AdsInitializer: ObservableObject {
                 startMobileAdsIfNeeded()
                 return
             }
-            
-            ATTrackingManager.requestTrackingAuthorization { _ in
-                // @Sendable クロージャ内で self を直接触らず MainActor に戻す
-                Task { @MainActor in
-                    self.hasRequested = true
-                    self.startMobileAdsIfNeeded()
-                }
-            }
+
+            requestTrackingAuthorizationFromSystem()
         } else {
             // iOS 13以下はATTがないので「聞いた扱い」にして広告開始
             hasRequested = true
             startMobileAdsIfNeeded()
+        }
+    }
+    
+    @MainActor
+    private func requestTrackingAuthorizationFromSystem() {
+        Task { @MainActor in
+            _ = await ATTrackingManager.requestTrackingAuthorization()
+            self.hasRequested = true
+            self.startMobileAdsIfNeeded()
         }
     }
     

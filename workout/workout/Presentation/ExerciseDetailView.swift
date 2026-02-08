@@ -5,6 +5,7 @@ import UIKit
 struct ExerciseDetailView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
     let exerciseID: UUID
+    let exercise: Exercise?
     let isNewRecord: Bool
     let initialDate: Date?
     let onSave: ((String) -> Void)?
@@ -43,12 +44,14 @@ struct ExerciseDetailView: View {
     init(
         viewModel: ExerciseListViewModel,
         exerciseID: UUID,
+        exercise: Exercise? = nil,
         isNewRecord: Bool,
         initialDate: Date?,
         onSave: ((String) -> Void)? = nil
     ) {
         _viewModel = ObservedObject(wrappedValue: viewModel)
         self.exerciseID = exerciseID
+        self.exercise = exercise
         self.isNewRecord = isNewRecord
         self.initialDate = initialDate
         self.onSave = onSave
@@ -61,7 +64,7 @@ struct ExerciseDetailView: View {
     }
 
     private var currentExercise: Exercise? {
-        viewModel.exercise(id: exerciseID)
+        exercise ?? viewModel.exercise(id: exerciseID)
     }
 
     private var formattedRecordDate: String {
@@ -201,7 +204,7 @@ struct ExerciseDetailView: View {
     }
 
     private func loadRecord(for date: Date, focusAfterLoad: Bool) {
-        guard let exercise = fetchExerciseForRecord() else {
+        guard let exercise = exercise ?? fetchExerciseForRecord() else {
             return
         }
         if let record = fetchRecordHeader(for: date) {

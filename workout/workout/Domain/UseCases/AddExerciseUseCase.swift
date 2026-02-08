@@ -20,4 +20,23 @@ struct AddExerciseUseCase {
         }
         return exercise
     }
+
+    func executePreset(_ preset: PresetExerciseDefinition) -> Exercise {
+        let exercise = Exercise(
+            id: preset.id,
+            name: preset.name,
+            bodyPart: preset.bodyPart,
+            defaultWeightUnit: preset.defaultWeightUnit,
+            isPreset: true,
+            seedKey: preset.seedKey,
+            seedVersion: preset.seedVersion,
+            isArchived: false
+        )
+        do {
+            try repository.upsert(exercise)
+        } catch {
+            // noop
+        }
+        return exercise
+    }
 }

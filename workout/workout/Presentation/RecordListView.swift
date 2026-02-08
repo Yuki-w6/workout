@@ -228,6 +228,7 @@ private struct RecordSection: View {
                     ExerciseDetailView(
                         viewModel: viewModel,
                         exerciseID: record.exerciseIDSnapshot,
+                        exercise: record.exercise,
                         isNewRecord: false,
                         initialDate: record.date,
                         onSave: { message in

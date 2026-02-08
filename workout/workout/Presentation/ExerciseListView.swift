@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct ExerciseListView: View {
+    private enum ExerciseNavigationTarget: Hashable {
+        case exercise(UUID)
+    }
+
     @ObservedObject var viewModel: ExerciseListViewModel
     @State private var searchText = ""
     @State private var editingExercise: Exercise?
@@ -14,6 +18,9 @@ struct ExerciseListView: View {
     @State private var isToastPresented = false
     @State private var isSettingsPresented = false
     @State private var isSyncing = false
+    @State private var navigationPath = NavigationPath()
+    @State private var isNavigating = false
+    @FocusState private var isSearchFocused: Bool
     private let bannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "BannerAdUnitID") as? String
     private var actionLabelColor: Color { .secondary }
 
@@ -30,22 +37,24 @@ struct ExerciseListView: View {
     ]
 
     private var filteredExercises: [Exercise] {
-        let visibleExercises = viewModel.exercises
-        guard !searchText.isEmpty else {
-            return visibleExercises
-        }
-        return visibleExercises.filter { exercise in
-            exercise.name.localizedCaseInsensitiveContains(searchText)
-        }
+        viewModel.exercises(matching: searchText)
+    }
+
+    private var filteredPresets: [PresetExerciseDefinition] {
+        viewModel.availablePresets(matching: searchText)
     }
 
     private func exercises(for bodyPart: BodyPart) -> [Exercise] {
         filteredExercises.filter { $0.bodyPart == bodyPart }
     }
 
+    private func presets(for bodyPart: BodyPart) -> [PresetExerciseDefinition] {
+        filteredPresets.filter { $0.bodyPart == bodyPart }
+    }
+
     var body: some View {
         ZStack {
-            NavigationStack {
+            NavigationStack(path: $navigationPath) {
                 Group {
                     if isSyncing && viewModel.exercises.isEmpty {
                         skeletonContent
@@ -53,6 +62,10 @@ struct ExerciseListView: View {
                         listContent
                     }
                 }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isSearchFocused = false
+                    }
                     .onAppear {
                         viewModel.load()
                         refreshSyncingState()
@@ -120,9 +133,42 @@ struct ExerciseListView: View {
                                 .padding(.horizontal, 16)
                         }
                     }
+                    .navigationDestination(for: ExerciseNavigationTarget.self) { target in
+                        switch target {
+                        case .exercise(let id):
+                            ExerciseDetailView(
+                                viewModel: viewModel,
+                                exerciseID: id,
+                                exercise: viewModel.exercise(id: id),
+                                isNewRecord: true,
+                                initialDate: nil,
+                                onSave: { message in
+                                    showToast(message)
+                                }
+                            )
+                            .onAppear {
+                                isNavigating = false
+                            }
+                        }
+                    }
             }
 
             SettingsSideSheet(isPresented: $isSettingsPresented)
+
+            if isNavigating {
+                ZStack {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color(.systemBackground))
+                                .shadow(radius: 6)
+                        )
+                }
+                .transition(.opacity)
+            }
         }
         .onAppear {
             refreshSyncingState()
@@ -146,6 +192,7 @@ struct ExerciseListView: View {
             TextField("種目を検索", text: $searchText)
                 .textInputAutocapitalization(.never)
                 .disableAutocorrection(true)
+                .focused($isSearchFocused)
 
             if !searchText.isEmpty {
                 Button {
@@ -172,13 +219,14 @@ struct ExerciseListView: View {
     private var listContent: some View {
         List {
             ForEach(bodyPartSections, id: \.bodyPart) { section in
+                let sectionPresets = presets(for: section.bodyPart)
                 let sectionExercises = exercises(for: section.bodyPart)
                 Section(section.title) {
+                    ForEach(sectionPresets, id: \.seedKey) { preset in
+                        presetRow(preset)
+                    }
                     ForEach(sectionExercises, id: \.id) { exercise in
                         exerciseRow(exercise)
-                    }
-                    .onDelete { offsets in
-                        deleteExercises(at: offsets, in: sectionExercises)
                     }
 
                     addExerciseButton(for: section.bodyPart)
@@ -238,30 +286,59 @@ struct ExerciseListView: View {
 
     @ViewBuilder
     private func exerciseRow(_ exercise: Exercise) -> some View {
-        NavigationLink {
-            ExerciseDetailView(
-                viewModel: viewModel,
-                exerciseID: exercise.id,
-                isNewRecord: true,
-                initialDate: nil,
-                onSave: { message in
-                    showToast(message)
-                }
-            )
-        } label: {
+        HStack {
             Text(exercise.name)
                 .font(.headline)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.tertiary)
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                let failedIds = viewModel.deleteExercises(ids: [exercise.id])
-                if !failedIds.isEmpty {
-                    isDeleteBlockedAlertPresented = true
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isNavigating = true
+            navigationPath.append(ExerciseNavigationTarget.exercise(exercise.id))
+        }
+        .accessibilityAddTraits(.isButton)
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isPresetLike(exercise)) {
+            if !isPresetLike(exercise) {
+                Button(role: .destructive) {
+                    let failedIds = viewModel.deleteExercises(ids: [exercise.id])
+                    if !failedIds.isEmpty {
+                        isDeleteBlockedAlertPresented = true
+                        return
+                    }
+                } label: {
+                    Label("削除", systemImage: "trash")
                 }
-            } label: {
-                Label("削除", systemImage: "trash")
             }
             Button {
+                editingExercise = exercise
+                draftExerciseName = exercise.name
+                isEditAlertPresented = true
+            } label: {
+                Label("編集", systemImage: "pencil")
+            }
+        }
+    }
+
+    private func presetRow(_ preset: PresetExerciseDefinition) -> some View {
+        HStack {
+            Text(preset.name)
+                .font(.headline)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.tertiary)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard let exercise = viewModel.ensureExercise(for: preset) else { return }
+            isNavigating = true
+            navigationPath.append(ExerciseNavigationTarget.exercise(exercise.id))
+        }
+        .accessibilityAddTraits(.isButton)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                guard let exercise = viewModel.ensureExercise(for: preset) else { return }
                 editingExercise = exercise
                 draftExerciseName = exercise.name
                 isEditAlertPresented = true
@@ -284,20 +361,17 @@ struct ExerciseListView: View {
         .tint(actionLabelColor)
     }
 
-    private func deleteExercises(at offsets: IndexSet, in sectionExercises: [Exercise]) {
-        let ids = offsets.compactMap { index in
-            sectionExercises.indices.contains(index) ? sectionExercises[index].id : nil
-        }
-        let failedIds = viewModel.deleteExercises(ids: ids)
-        if !failedIds.isEmpty {
-            isDeleteBlockedAlertPresented = true
-        }
-    }
-
     private func showToast(_ message: String) {
         toastMessage = message
         withAnimation(.easeInOut(duration: 0.2)) {
             isToastPresented = true
         }
     }
+
+    private func isPresetLike(_ exercise: Exercise) -> Bool {
+        PresetExerciseDefinitions.all.contains { preset in
+            preset.name == exercise.name && preset.bodyPart.rawValue == exercise.bodyPartRaw
+        }
+    }
+
 }

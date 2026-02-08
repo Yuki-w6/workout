@@ -25,7 +25,37 @@ final class ExerciseListViewModel: ObservableObject {
     }
 
     func load() {
-        exercises = fetchExercises.execute()
+        exercises = dedupeByID(fetchExercises.execute())
+    }
+
+    func exercises(matching searchText: String) -> [Exercise] {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return exercises }
+        return exercises.filter { $0.name.localizedCaseInsensitiveContains(trimmed) }
+    }
+
+    func availablePresets(matching searchText: String) -> [PresetExerciseDefinition] {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let existingPresetIDs = Set(exercises.filter { $0.isPreset }.map { $0.id })
+        let existingSeedKeys = Set(exercises.compactMap { $0.seedKey })
+        return PresetExerciseDefinitions.all.filter { preset in
+            guard existingPresetIDs.contains(preset.id) == false else { return false }
+            guard existingSeedKeys.contains(preset.seedKey) == false else { return false }
+            guard !trimmed.isEmpty else { return true }
+            return preset.name.localizedCaseInsensitiveContains(trimmed)
+        }
+    }
+
+    func ensureExercise(for preset: PresetExerciseDefinition) -> Exercise? {
+        if let existingByID = exercises.first(where: { $0.id == preset.id }) {
+            return existingByID
+        }
+        if let existingBySeed = exercises.first(where: { $0.seedKey == preset.seedKey }) {
+            return existingBySeed
+        }
+        let created = addExercise.executePreset(preset)
+        load()
+        return created
     }
 
     func exercise(id: UUID) -> Exercise? {
@@ -59,5 +89,17 @@ final class ExerciseListViewModel: ObservableObject {
         }
         load()
         return failedIds
+    }
+
+    private func dedupeByID(_ items: [Exercise]) -> [Exercise] {
+        var seen: Set<UUID> = []
+        var result: [Exercise] = []
+        result.reserveCapacity(items.count)
+        for item in items {
+            if seen.insert(item.id).inserted {
+                result.append(item)
+            }
+        }
+        return result
     }
 }

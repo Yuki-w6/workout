@@ -18,10 +18,6 @@ protocol ExerciseRepository {
     func fetchByBodyPart(_ bodyPart: BodyPart, includeArchived: Bool) throws -> [Exercise]
     func searchByName(_ keyword: String, includeArchived: Bool) throws -> [Exercise]
     
-    // seed / 同期のための取得
-    func fetchPresetBySeedKey(_ seedKey: String) throws -> Exercise?
-    func fetchPresets() throws -> [Exercise]
-    
     // 更新系
     func upsert(_ exercise: Exercise) throws
     func archive(_ exerciseID: UUID) throws
@@ -108,29 +104,6 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
             predicate: predicate,
             sortBy: [
                 SortDescriptor(\Exercise.presetSortKey, order: .forward),
-                SortDescriptor(\Exercise.name, order: .forward)
-            ]
-        )
-        return try context.fetch(desc)
-    }
-    
-    // MARK: Preset / Seed
-    
-    func fetchPresetBySeedKey(_ seedKey: String) throws -> Exercise? {
-        let key = seedKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else { return nil }
-        
-        let desc = FetchDescriptor<Exercise>(
-            predicate: #Predicate { $0.isPreset == true && $0.seedKey == key }
-        )
-        return try context.fetch(desc).first
-    }
-    
-    func fetchPresets() throws -> [Exercise] {
-        let desc = FetchDescriptor<Exercise>(
-            predicate: #Predicate { $0.isPreset == true && $0.isArchived == false },
-            sortBy: [
-                SortDescriptor(\Exercise.bodyPartRaw, order: .forward),
                 SortDescriptor(\Exercise.name, order: .forward)
             ]
         )

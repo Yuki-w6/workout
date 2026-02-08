@@ -1,5 +1,14 @@
 import Foundation
 
+struct PresetExerciseDefinition {
+    let id: UUID
+    let seedKey: String
+    let seedVersion: Int
+    let name: String
+    let bodyPart: BodyPart
+    let defaultWeightUnit: WeightUnit
+}
+
 enum PresetExerciseDefinitions {
     static let all: [PresetExerciseDefinition] = [
         PresetExerciseDefinition(

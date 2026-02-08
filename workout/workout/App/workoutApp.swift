@@ -17,20 +17,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct workoutApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var ads = AdsInitializer()
-    @StateObject private var seeder = AppSeeder()
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     
     init() {
-        let pink = UIColor(red: 0.992, green: 0.294, blue: 0.004, alpha: 1.0)
+        let appColor = UIColor(red: 0.992, green: 0.294, blue: 0.004, alpha: 1.0)
         let appearance = UITabBarAppearance()
         appearance.configureWithDefaultBackground()
-        appearance.stackedLayoutAppearance.selected.iconColor = pink
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: pink]
-        appearance.inlineLayoutAppearance.selected.iconColor = pink
-        appearance.inlineLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: pink]
-        appearance.compactInlineLayoutAppearance.selected.iconColor = pink
-        appearance.compactInlineLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: pink]
+        appearance.stackedLayoutAppearance.selected.iconColor = appColor
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: appColor]
+        appearance.inlineLayoutAppearance.selected.iconColor = appColor
+        appearance.inlineLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: appColor]
+        appearance.compactInlineLayoutAppearance.selected.iconColor = appColor
+        appearance.compactInlineLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: appColor]
 
         let tabBar = UITabBar.appearance()
         tabBar.standardAppearance = appearance
@@ -59,8 +58,6 @@ struct workoutApp: App {
                                 return
                             }
                             #endif
-                            
-                            seeder.runIfNeeded(modelContainer: container.modelContainer)
                             
                             // AdsInitializer は @MainActor なので MainActor 上で呼ぶ
                             await MainActor.run {
@@ -176,7 +173,7 @@ private final class AppState: ObservableObject {
     func loadContainer() async {
         errorMessage = nil
         do {
-            let result = try AppContainer.make(useCloud: false)
+            let result = try await AppContainer.make(useCloud: false)
             self.container = result.container
             warningMessage = result.warningMessage
             isCloudAvailable = false
