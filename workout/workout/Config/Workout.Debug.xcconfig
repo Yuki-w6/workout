@@ -1,5 +1,5 @@
-#include "$(SRCROOT)/Pods/Target Support Files/Pods-workout/Pods-workout.debug.xcconfig"
-#include "$(SRCROOT)/workout/Config/Secrets.xcconfig"
+#include "../../Pods/Target Support Files/Pods-workout/Pods-workout.debug.xcconfig"
+#include "../../Secrets.xcconfig"
 BANNER_AD_UNIT_ID = ca-app-pub-3940256099942544/2934735716
 RECORD_LIST_BANNER_AD_UNIT_ID = ca-app-pub-3940256099942544/2934735716
 GRAPH_BANNER_AD_UNIT_ID = ca-app-pub-3940256099942544/2934735716
