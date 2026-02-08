@@ -17,6 +17,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct workoutApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var ads = AdsInitializer()
+    @AppStorage("cloudSyncEnabled") private var isCloudSyncEnabled = true
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     
@@ -38,81 +39,89 @@ struct workoutApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if let container = appState.container {
-                let repository = container.exerciseRepository
-                let viewModel = ExerciseListViewModel(
-                    fetchExercises: FetchExercisesUseCase(repository: repository),
-                    fetchExercise: FetchExerciseUseCase(repository: repository),
-                    addExercise: AddExerciseUseCase(repository: repository),
-                    updateExercise: UpdateExerciseUseCase(repository: repository),
-                    deleteExercise: DeleteExerciseUseCase(repository: repository)
-                )
-                ZStack(alignment: .top) {
-                    ContentView(viewModel: viewModel)
-                        .modelContainer(container.modelContainer)
-                        .disabled(appState.isImporting)
-                        .task {
-                            #if DEBUG
-                            // Xcode Preview 判定（環境変数）
-                            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-                                return
+            Group {
+                if let container = appState.container {
+                    let repository = container.exerciseRepository
+                    let viewModel = ExerciseListViewModel(
+                        fetchExercises: FetchExercisesUseCase(repository: repository),
+                        fetchExercise: FetchExerciseUseCase(repository: repository),
+                        addExercise: AddExerciseUseCase(repository: repository),
+                        updateExercise: UpdateExerciseUseCase(repository: repository),
+                        deleteExercise: DeleteExerciseUseCase(repository: repository)
+                    )
+                    ZStack(alignment: .top) {
+                        ContentView(viewModel: viewModel, isCloudSyncEnabled: $isCloudSyncEnabled)
+                            .modelContainer(container.modelContainer)
+                            .disabled(appState.isImporting)
+                            .task {
+                                #if DEBUG
+                                // Xcode Preview 判定（環境変数）
+                                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                                    return
+                                }
+                                #endif
+                                
+                                // AdsInitializer は @MainActor なので MainActor 上で呼ぶ
+                                await MainActor.run {
+                                    ads.startIfNeeded()
+                                }
                             }
-                            #endif
-                            
-                            // AdsInitializer は @MainActor なので MainActor 上で呼ぶ
-                            await MainActor.run {
-                                ads.startIfNeeded()
-                            }
-                        }
 
-                    if let warningMessage = appState.warningMessage {
-                        HStack(spacing: 12) {
-                            Text(warningMessage)
-                                .font(.footnote.weight(.semibold))
-                                .multilineTextAlignment(.leading)
-                            Button {
-                                appState.warningMessage = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
+                        if let warningMessage = appState.warningMessage {
+                            HStack(spacing: 12) {
+                                Text(warningMessage)
+                                    .font(.footnote.weight(.semibold))
+                                    .multilineTextAlignment(.leading)
+                                Button {
+                                    appState.warningMessage = nil
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color(.systemBackground))
+                                    .shadow(radius: 6)
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                        }
+                        if appState.isImporting {
+                            ZStack {
+                                Color.black.opacity(0.2)
+                                    .ignoresSafeArea()
+                                SyncSkeletonView(title: statusMessage)
                             }
                         }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color(.systemBackground))
-                                .shadow(radius: 6)
-                        )
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
                     }
-                    if appState.isImporting {
-                        ZStack {
-                            Color.black.opacity(0.2)
-                                .ignoresSafeArea()
-                            SyncSkeletonView(title: statusMessage)
-                        }
-                    }
-                }
-            } else if let errorMessage = appState.errorMessage {
-                VStack(spacing: 12) {
-                    Text(errorMessage)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                    if let cloudKitStatusMessage = appState.cloudKitStatusMessage {
-                        Text(cloudKitStatusMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                } else if let errorMessage = appState.errorMessage {
+                    VStack(spacing: 12) {
+                        Text(errorMessage)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 24)
+                        if let cloudKitStatusMessage = appState.cloudKitStatusMessage {
+                            Text(cloudKitStatusMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 24)
+                        }
+                        Button("再試行") {
+                            Task { await appState.loadContainer(useCloud: isCloudSyncEnabled) }
+                        }
                     }
-                    Button("再試行") {
-                        Task { await appState.loadContainer() }
-                    }
+                } else {
+                    ProgressView("読み込み中...")
                 }
-            } else {
-                ProgressView("読み込み中...")
+            }
+            .task {
+                await appState.loadContainer(useCloud: isCloudSyncEnabled)
+            }
+            .onChange(of: isCloudSyncEnabled) { _, newValue in
+                Task { await appState.loadContainer(useCloud: newValue) }
             }
         }
     }
@@ -166,17 +175,13 @@ private final class AppState: ObservableObject {
     @Published var isImporting = false
     @Published var isCloudAvailable = false
 
-    init() {
-        Task { await loadContainer() }
-    }
-
-    func loadContainer() async {
+    func loadContainer(useCloud: Bool) async {
         errorMessage = nil
         do {
-            let result = try await AppContainer.make(useCloud: false)
+            let result = try await AppContainer.make(useCloud: useCloud)
             self.container = result.container
             warningMessage = result.warningMessage
-            isCloudAvailable = false
+            isCloudAvailable = useCloud
         } catch {
             self.container = nil
             warningMessage = nil

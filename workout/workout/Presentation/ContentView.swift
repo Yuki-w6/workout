@@ -4,14 +4,16 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel: ExerciseListViewModel
+    @Binding private var isCloudSyncEnabled: Bool
 
-    init(viewModel: ExerciseListViewModel) {
+    init(viewModel: ExerciseListViewModel, isCloudSyncEnabled: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isCloudSyncEnabled = isCloudSyncEnabled
     }
 
     var body: some View {
         TabView {
-            ExerciseListView(viewModel: viewModel)
+            ExerciseListView(viewModel: viewModel, isCloudSyncEnabled: $isCloudSyncEnabled)
                 .tabItem {
                     VStack(spacing: 2) {
                         Image(systemName: "house")
@@ -46,24 +48,21 @@ private struct ContentViewPreview: View {
         let container = try! ModelContainer(for: schema, configurations: [configuration])
         let context = ModelContext(container)
 
-        let exercises = [
-            Exercise(name: "ベンチプレス", bodyPart: .chest, defaultWeightUnit: .kg),
-            Exercise(name: "ダンベルフライ", bodyPart: .chest, defaultWeightUnit: .kg),
-            Exercise(name: "デットリフト", bodyPart: .back, defaultWeightUnit: .kg),
-            Exercise(name: "ラットプルダウン", bodyPart: .back, defaultWeightUnit: .kg),
-            Exercise(name: "スクワッド", bodyPart: .legs, defaultWeightUnit: .kg),
-            Exercise(name: "レッグプレス", bodyPart: .legs, defaultWeightUnit: .kg),
-            Exercise(name: "ショルダープレス", bodyPart: .shoulders, defaultWeightUnit: .kg),
-            Exercise(name: "サイドレイズ", bodyPart: .shoulders, defaultWeightUnit: .kg),
-            Exercise(name: "リアレイズ", bodyPart: .shoulders, defaultWeightUnit: .kg),
-            Exercise(name: "アームカール", bodyPart: .arms, defaultWeightUnit: .kg),
-            Exercise(name: "ヒップスラスト", bodyPart: .glutes, defaultWeightUnit: .kg),
-            Exercise(name: "クランチ", bodyPart: .core, defaultWeightUnit: .kg)
-        ]
+        let exercises = PresetExerciseDefinitions.all.map { preset in
+            Exercise(
+                id: preset.id,
+                name: preset.name,
+                bodyPart: preset.bodyPart,
+                defaultWeightUnit: preset.defaultWeightUnit,
+                isPreset: true,
+                seedKey: preset.seedKey,
+                seedVersion: preset.seedVersion
+            )
+        }
         exercises.forEach { context.insert($0) }
 
         let calendar = Calendar(identifier: .gregorian)
-        if let benchPress = exercises.first {
+        if let benchPress = exercises.first(where: { $0.seedKey == "bench_press" }) {
             func addRecord(dayOffset: Int, sets: [(Double, Int)]) {
                 guard let date = calendar.date(byAdding: .day, value: dayOffset, to: Date()) else {
                     return
@@ -107,7 +106,7 @@ private struct ContentViewPreview: View {
     }
 
     var body: some View {
-        ContentView(viewModel: viewModel)
+        ContentView(viewModel: viewModel, isCloudSyncEnabled: .constant(true))
             .modelContainer(container)
     }
 }

@@ -2,8 +2,14 @@ import SwiftUI
 
 struct SettingsSideSheet: View {
     @Binding var isPresented: Bool
+    @Binding var isCloudSyncEnabled: Bool
     private let actionLabelColor: Color = .secondary
     @Environment(\.openURL) private var openURL
+
+    init(isPresented: Binding<Bool>, isCloudSyncEnabled: Binding<Bool>) {
+        _isPresented = isPresented
+        _isCloudSyncEnabled = isCloudSyncEnabled
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -37,6 +43,7 @@ struct SettingsSideSheet: View {
                         systemImage: "questionmark.circle",
                         urlString: "https://celestial-estimate-0db.notion.site/2e5540c9e67280dcbc80f99d961593db"
                     )
+                    cloudSyncToggle
 
                     Spacer()
                 }
@@ -76,6 +83,19 @@ struct SettingsSideSheet: View {
             }
             .foregroundStyle(actionLabelColor)
         }
+    }
+
+    private var cloudSyncToggle: some View {
+        Toggle(isOn: $isCloudSyncEnabled) {
+            HStack(spacing: 12) {
+                Image(systemName: "icloud")
+                    .frame(width: 22)
+                Text("クラウド同期")
+                    .font(.headline)
+            }
+            .foregroundStyle(actionLabelColor)
+        }
+        .tint(.green)
     }
 
 

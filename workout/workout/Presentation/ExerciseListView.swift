@@ -6,6 +6,7 @@ struct ExerciseListView: View {
     }
 
     @ObservedObject var viewModel: ExerciseListViewModel
+    @Binding var isCloudSyncEnabled: Bool
     @State private var searchText = ""
     @State private var editingExercise: Exercise?
     @State private var draftExerciseName = ""
@@ -13,6 +14,7 @@ struct ExerciseListView: View {
     @State private var addingBodyPart: BodyPart?
     @State private var draftNewExerciseName = ""
     @State private var isAddAlertPresented = false
+    @State private var isAddSheetPresented = false
     @State private var isDeleteBlockedAlertPresented = false
     @State private var toastMessage = ""
     @State private var isToastPresented = false
@@ -63,9 +65,6 @@ struct ExerciseListView: View {
                     }
                 }
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        isSearchFocused = false
-                    }
                     .onAppear {
                         viewModel.load()
                         refreshSyncingState()
@@ -94,22 +93,19 @@ struct ExerciseListView: View {
                     } message: {
                         Text("記録のある種目は削除できません。")
                     }
-                    .alert("種目を追加", isPresented: $isAddAlertPresented) {
-                        TextField("種目名", text: $draftNewExerciseName)
-                        Button("追加") {
-                            guard let bodyPart = addingBodyPart else {
-                                return
+                    .sheet(isPresented: $isAddSheetPresented) {
+                        AddExerciseSheet(
+                            isPresented: $isAddSheetPresented,
+                            bodyPart: addingBodyPart,
+                            initialName: draftNewExerciseName,
+                            onAdd: { name, bodyPart in
+                                viewModel.addExercise(name: name, bodyPart: bodyPart)
+                                addingBodyPart = nil
+                            },
+                            onCancel: {
+                                addingBodyPart = nil
                             }
-                            let trimmedName = draftNewExerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
-                            let finalName = trimmedName.isEmpty ? "新しい種目" : trimmedName
-                            viewModel.addExercise(name: finalName, bodyPart: bodyPart)
-                            addingBodyPart = nil
-                        }
-                        Button("キャンセル", role: .cancel) {
-                            addingBodyPart = nil
-                        }
-                    } message: {
-                        Text("種目名を入力してください")
+                        )
                     }
                     .onChange(of: isEditAlertPresented) { _, newValue in
                         if !newValue {
@@ -117,6 +113,11 @@ struct ExerciseListView: View {
                         }
                     }
                     .onChange(of: isAddAlertPresented) { _, newValue in
+                        if !newValue {
+                            addingBodyPart = nil
+                        }
+                    }
+                    .onChange(of: isAddSheetPresented) { _, newValue in
                         if !newValue {
                             addingBodyPart = nil
                         }
@@ -153,7 +154,7 @@ struct ExerciseListView: View {
                     }
             }
 
-            SettingsSideSheet(isPresented: $isSettingsPresented)
+            SettingsSideSheet(isPresented: $isSettingsPresented, isCloudSyncEnabled: $isCloudSyncEnabled)
 
             if isNavigating {
                 ZStack {
@@ -233,6 +234,7 @@ struct ExerciseListView: View {
                 }
             }
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var skeletonContent: some View {
@@ -352,13 +354,19 @@ struct ExerciseListView: View {
         Button {
             addingBodyPart = bodyPart
             draftNewExerciseName = ""
-            isAddAlertPresented = true
+            isAddSheetPresented = true
         } label: {
-            Label("種目を追加", systemImage: "plus")
-                .font(.subheadline)
-                .foregroundStyle(actionLabelColor)
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                Text("種目を追加")
+            }
+            .font(.subheadline)
+            .foregroundStyle(actionLabelColor)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .tint(actionLabelColor)
+        .buttonStyle(.plain)
     }
 
     private func showToast(_ message: String) {
@@ -374,4 +382,64 @@ struct ExerciseListView: View {
         }
     }
 
+}
+
+private struct AddExerciseSheet: View {
+    @Binding var isPresented: Bool
+    let bodyPart: BodyPart?
+    @State private var name: String
+    @FocusState private var isNameFocused: Bool
+    let onAdd: (String, BodyPart) -> Void
+    let onCancel: () -> Void
+
+    init(
+        isPresented: Binding<Bool>,
+        bodyPart: BodyPart?,
+        initialName: String,
+        onAdd: @escaping (String, BodyPart) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        _isPresented = isPresented
+        self.bodyPart = bodyPart
+        _name = State(initialValue: initialName)
+        self.onAdd = onAdd
+        self.onCancel = onCancel
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("種目名", text: $name)
+                        .focused($isNameFocused)
+                } footer: {
+                    Text("種目名を入力してください")
+                }
+            }
+            .navigationTitle("種目を追加")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") {
+                        onCancel()
+                        isPresented = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("追加") {
+                        guard let bodyPart else { return }
+                        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let finalName = trimmedName.isEmpty ? "新しい種目" : trimmedName
+                        onAdd(finalName, bodyPart)
+                        isPresented = false
+                    }
+                }
+            }
+            .onAppear {
+                DispatchQueue.main.async {
+                    isNameFocused = true
+                }
+            }
+        }
+    }
 }

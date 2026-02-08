@@ -54,7 +54,7 @@ final class AdsInitializer: ObservableObject {
         // 二重起動防止
         guard !hasStartedAds else { return }
         hasStartedAds = true
-        
+
         MobileAds.shared.start(completionHandler: { _ in })
     }
 }
