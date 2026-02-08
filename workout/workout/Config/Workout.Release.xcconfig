@@ -1,2 +1,2 @@
-#include "../../Pods/Target Support Files/Pods-workout/Pods-workout.release.xcconfig"
-#include "Secrets.xcconfig"
+#include "$(SRCROOT)/Pods/Target Support Files/Pods-workout/Pods-workout.release.xcconfig"
+#include "$(SRCROOT)/workout/Config/Secrets.xcconfig"
