@@ -8,10 +8,6 @@
 	<string>ca-app-pub-1976866996688533~6909684310</string>
 	<key>GraphBannerAdUnitID</key>
 	<string>$(GRAPH_BANNER_AD_UNIT_ID)</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 	<key>RecordListBannerAdUnitID</key>
 	<string>$(RECORD_LIST_BANNER_AD_UNIT_ID)</string>
 	<key>SKAdNetworkItems</key>
@@ -212,6 +208,10 @@
 			<key>SKAdNetworkIdentifier</key>
 			<string>3qcr597p9d.skadnetwork</string>
 		</dict>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>
