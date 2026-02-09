@@ -497,7 +497,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
-				INFOPLIST_KEY_CFBundleName = "筋トレログ";
+				INFOPLIST_KEY_CFBundleName = "WorkoutLogJP";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -539,7 +539,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
-				INFOPLIST_KEY_CFBundleName = "筋トレログ";
+				INFOPLIST_KEY_CFBundleName = "WorkoutLogJP";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
