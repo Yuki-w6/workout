@@ -31,7 +31,7 @@
 
 /* Begin PBXFileReference section */
 		A1B2C3D4E5F60718293A4B5D /* workout/GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "workout/GoogleService-Info.plist"; sourceTree = "<group>"; };
-		FA301B492F05FB730005BF68 /* workout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = workout.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA301B492F05FB730005BF68 /* WorkoutLogJP2026WOD01.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutLogJP2026WOD01.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA301B5B2F05FB760005BF68 /* workoutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = workoutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA301B652F05FB760005BF68 /* workoutUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = workoutUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA9A0D1C2F20000100000001 /* workout/Config/Workout.Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = workout/Config/Workout.Debug.xcconfig; sourceTree = "<group>"; };
@@ -39,12 +39,12 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		FA7387302F123EFA004D1470 /* Exceptions for "workout" folder in "workout" target */ = {
+		FA7387302F123EFA004D1470 /* Exceptions for "workout" folder in "WorkoutLogJP2026WOD01" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = FA301B482F05FB720005BF68 /* workout */;
+			target = FA301B482F05FB720005BF68 /* WorkoutLogJP2026WOD01 */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -52,7 +52,7 @@
 		FA301B4B2F05FB730005BF68 /* workout */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				FA7387302F123EFA004D1470 /* Exceptions for "workout" folder in "workout" target */,
+				FA7387302F123EFA004D1470 /* Exceptions for "workout" folder in "WorkoutLogJP2026WOD01" target */,
 			);
 			path = workout;
 			sourceTree = "<group>";
@@ -112,7 +112,7 @@
 		FA301B4A2F05FB730005BF68 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				FA301B492F05FB730005BF68 /* workout.app */,
+				FA301B492F05FB730005BF68 /* WorkoutLogJP2026WOD01.app */,
 				FA301B5B2F05FB760005BF68 /* workoutTests.xctest */,
 				FA301B652F05FB760005BF68 /* workoutUITests.xctest */,
 			);
@@ -139,9 +139,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		FA301B482F05FB720005BF68 /* workout */ = {
+		FA301B482F05FB720005BF68 /* WorkoutLogJP2026WOD01 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FA301B6F2F05FB760005BF68 /* Build configuration list for PBXNativeTarget "workout" */;
+			buildConfigurationList = FA301B6F2F05FB760005BF68 /* Build configuration list for PBXNativeTarget "WorkoutLogJP2026WOD01" */;
 			buildPhases = (
 				FA301B452F05FB720005BF68 /* Sources */,
 				FA301B462F05FB720005BF68 /* Frameworks */,
@@ -154,9 +154,9 @@
 			fileSystemSynchronizedGroups = (
 				FA301B4B2F05FB730005BF68 /* workout */,
 			);
-			name = workout;
+			name = WorkoutLogJP2026WOD01;
 			productName = workout;
-			productReference = FA301B492F05FB730005BF68 /* workout.app */;
+			productReference = FA301B492F05FB730005BF68 /* WorkoutLogJP2026WOD01.app */;
 			productType = "com.apple.product-type.application";
 		};
 		FA301B5A2F05FB760005BF68 /* workoutTests */ = {
@@ -244,7 +244,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				FA301B482F05FB720005BF68 /* workout */,
+				FA301B482F05FB720005BF68 /* WorkoutLogJP2026WOD01 */,
 				FA301B5A2F05FB760005BF68 /* workoutTests */,
 				FA301B642F05FB760005BF68 /* workoutUITests */,
 			);
@@ -349,12 +349,12 @@
 /* Begin PBXTargetDependency section */
 		FA301B5D2F05FB760005BF68 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FA301B482F05FB720005BF68 /* workout */;
+			target = FA301B482F05FB720005BF68 /* WorkoutLogJP2026WOD01 */;
 			targetProxy = FA301B5C2F05FB760005BF68 /* PBXContainerItemProxy */;
 		};
 		FA301B672F05FB760005BF68 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FA301B482F05FB720005BF68 /* workout */;
+			target = FA301B482F05FB720005BF68 /* WorkoutLogJP2026WOD01 */;
 			targetProxy = FA301B662F05FB760005BF68 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -496,8 +496,8 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
-				INFOPLIST_KEY_CFBundleName = "WorkOutLogJP2026WOD_01";
+				INFOPLIST_KEY_CFBundleDisplayName = "筋トレ記録";
+				INFOPLIST_KEY_CFBundleName = WorkOutLogJP2026WOD_01;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -512,7 +512,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlog;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = WorkoutLogJP2026WOD01;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -538,8 +538,8 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = workout/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "筋トレログ";
-				INFOPLIST_KEY_CFBundleName = "WorkOutLogJP2026WOD_01";
+				INFOPLIST_KEY_CFBundleDisplayName = "筋トレ記録";
+				INFOPLIST_KEY_CFBundleName = WorkOutLogJP2026WOD_01;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "無料で提供するため広告の最適化に使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -554,7 +554,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mayama.workoutlog;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = WorkoutLogJP2026WOD01;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -652,7 +652,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FA301B6F2F05FB760005BF68 /* Build configuration list for PBXNativeTarget "workout" */ = {
+		FA301B6F2F05FB760005BF68 /* Build configuration list for PBXNativeTarget "WorkoutLogJP2026WOD01" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FA301B702F05FB760005BF68 /* Debug */,

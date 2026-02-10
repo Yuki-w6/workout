@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "FA301B482F05FB720005BF68"
-               BuildableName = "workout.app"
-               BlueprintName = "workout"
+               BuildableName = "WorkoutLogJP2026WOD01.app"
+               BlueprintName = "WorkoutLogJP2026WOD01"
                ReferencedContainer = "container:workout.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -69,8 +69,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "FA301B482F05FB720005BF68"
-            BuildableName = "workout.app"
-            BlueprintName = "workout"
+            BuildableName = "WorkoutLogJP2026WOD01.app"
+            BlueprintName = "WorkoutLogJP2026WOD01"
             ReferencedContainer = "container:workout.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -86,8 +86,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "FA301B482F05FB720005BF68"
-            BuildableName = "workout.app"
-            BlueprintName = "workout"
+            BuildableName = "WorkoutLogJP2026WOD01.app"
+            BlueprintName = "WorkoutLogJP2026WOD01"
             ReferencedContainer = "container:workout.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
