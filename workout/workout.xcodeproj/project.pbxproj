@@ -489,7 +489,8 @@
 				CODE_SIGN_ENTITLEMENTS = workout/workout.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				COPY_PHASE_STRIP = YES;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
@@ -531,7 +532,8 @@
 				CODE_SIGN_ENTITLEMENTS = workout/workout.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				COPY_PHASE_STRIP = YES;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
