@@ -20,6 +20,9 @@ struct ExerciseDetailView: View {
     @State private var lastLoadedDate = Date()
     @State private var originalRecordDate: Date?
     @State private var scrollToSetIndex: Int?
+    @State private var isOverwriteAlertPresented = false
+    @State private var pendingSaveDate: Date?
+    @State private var isDatePickerPresented = false
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
 
@@ -93,6 +96,11 @@ struct ExerciseDetailView: View {
                 .padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground))
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    dismissInputFocus()
+                }
+            )
             .onChange(of: scrollToSetIndex) {
                 guard let index = scrollToSetIndex else {
                     return
@@ -125,11 +133,7 @@ struct ExerciseDetailView: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("保存") {
-                    saveRecord(for: recordDate)
-                    lastLoadedDate = calendar.startOfDay(for: recordDate)
-                    let message = isNewRecord ? "記録しました" : "変更しました"
-                    onSave?(message)
-                    dismiss()
+                    attemptSave(for: recordDate)
                 }
                 .accessibilityLabel("記録を保存")
             }
@@ -192,6 +196,22 @@ struct ExerciseDetailView: View {
         .onChange(of: unit) { _, newValue in
             lastWeightUnitRaw = newValue.rawValue
         }
+        .onChange(of: isDatePickerPresented) { _, isPresented in
+            if isPresented {
+                dismissInputFocus()
+            }
+        }
+        .alert("同じ日付に記録があります。上書きしますか？", isPresented: $isOverwriteAlertPresented) {
+            Button("上書き", role: .destructive) {
+                guard let pendingSaveDate else {
+                    return
+                }
+                confirmSave(for: pendingSaveDate)
+            }
+            Button("キャンセル", role: .cancel) {
+                pendingSaveDate = nil
+            }
+        }
     }
 
     private func loadRecord(for date: Date, focusAfterLoad: Bool) {
@@ -214,12 +234,7 @@ struct ExerciseDetailView: View {
             }
         } else {
             unit = WeightUnit(rawValue: lastWeightUnitRaw) ?? exercise.defaultWeightUnit
-            let templateSets = fetchTemplateSets(for: exercise)
-            if templateSets.isEmpty {
-                sets = ExerciseSetInput.defaultSets()
-            } else {
-                sets = templateSets.map { ExerciseSetInput(from: $0) }
-            }
+            sets = ExerciseSetInput.defaultSets()
             if sets.last.map(isEmptySet) != true {
                 sets.append(ExerciseSetInput())
             }
@@ -235,6 +250,28 @@ struct ExerciseDetailView: View {
         }
         saveTemplateSets(for: exercise)
         saveWorkoutRecord(for: date, exercise: exercise)
+    }
+
+    private func attemptSave(for date: Date) {
+        let targetDate = calendar.startOfDay(for: date)
+        let originalDate = originalRecordDate.map { calendar.startOfDay(for: $0) }
+        if let _ = fetchRecordHeader(for: targetDate) {
+            if isNewRecord || (originalDate != nil && originalDate != targetDate) {
+                pendingSaveDate = targetDate
+                isOverwriteAlertPresented = true
+                return
+            }
+        }
+        confirmSave(for: targetDate)
+    }
+
+    private func confirmSave(for date: Date) {
+        pendingSaveDate = nil
+        saveRecord(for: date)
+        lastLoadedDate = calendar.startOfDay(for: date)
+        let message = isNewRecord ? "記録しました" : "変更しました"
+        onSave?(message)
+        dismiss()
     }
 
     private func handleRecordDateChange(to newDate: Date) {
@@ -339,6 +376,11 @@ struct ExerciseDetailView: View {
         }
     }
 
+    private func dismissInputFocus() {
+        focusedField = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
 }
 
 private extension ExerciseDetailView {
@@ -348,32 +390,50 @@ private extension ExerciseDetailView {
                 .font(.headline)
             HStack {
                 Spacer()
-                ZStack(alignment: .trailing) {
-                    DatePicker(
-                        "",
-                        selection: Binding(
-                            get: { recordDate },
-                            set: { recordDate = calendar.startOfDay(for: $0) }
-                        ),
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.compact)
-                    .environment(\.calendar, calendar)
-                    .environment(\.locale, calendar.locale ?? .current)
-                    .labelsHidden()
-                    .opacity(0.02)
-                    .accessibilityLabel("日付")
+                Button {
+                    isDatePickerPresented = true
+                } label: {
                     Text(formattedRecordDate)
                         .monospacedDigit()
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Color(.secondarySystemGroupedBackground))
                         .clipShape(Capsule())
-                        .allowsHitTesting(false)
                 }
+                .accessibilityLabel("日付")
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 4)
+        .sheet(isPresented: $isDatePickerPresented) {
+            NavigationStack {
+                VStack {
+                    DatePicker(
+                        "日付",
+                        selection: Binding(
+                            get: { recordDate },
+                            set: { recordDate = calendar.startOfDay(for: $0) }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.graphical)
+                    .environment(\.calendar, calendar)
+                    .environment(\.locale, calendar.locale ?? .current)
+                    .labelsHidden()
+                    .padding()
+                    Spacer()
+                }
+                .navigationTitle("日付を選択")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("完了") {
+                            isDatePickerPresented = false
+                        }
+                    }
+                }
+            }
+        }
     }
 
     var setsSection: some View {

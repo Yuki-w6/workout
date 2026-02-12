@@ -217,24 +217,46 @@ struct ExerciseListView: View {
         .padding(.bottom, 4)
     }
 
+    @ViewBuilder
     private var listContent: some View {
-        List {
-            ForEach(bodyPartSections, id: \.bodyPart) { section in
-                let sectionPresets = presets(for: section.bodyPart)
-                let sectionExercises = exercises(for: section.bodyPart)
-                Section(section.title) {
-                    ForEach(sectionPresets, id: \.seedKey) { preset in
-                        presetRow(preset)
-                    }
-                    ForEach(sectionExercises, id: \.id) { exercise in
-                        exerciseRow(exercise)
-                    }
+        let isSearching = !searchText.isEmpty
+        let totalResults = filteredPresets.count + filteredExercises.count
 
-                    addExerciseButton(for: section.bodyPart)
+        if isSearching && totalResults == 0 {
+            VStack {
+                Spacer()
+                Text("検索結果がありません")
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+        } else {
+            List {
+                ForEach(bodyPartSections, id: \.bodyPart) { section in
+                    let sectionPresets = presets(for: section.bodyPart)
+                    let sectionExercises = exercises(for: section.bodyPart)
+                    if !isSearching || !sectionPresets.isEmpty || !sectionExercises.isEmpty {
+                        Section(section.title) {
+                            ForEach(sectionPresets, id: \.seedKey) { preset in
+                                presetRow(preset)
+                            }
+                            ForEach(sectionExercises, id: \.id) { exercise in
+                                exerciseRow(exercise)
+                            }
+
+                            if !isSearching {
+                                addExerciseButton(for: section.bodyPart)
+                            }
+                        }
+                    }
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    isSearchFocused = false
+                }
+            )
         }
-        .scrollDismissesKeyboard(.interactively)
     }
 
     private var skeletonContent: some View {

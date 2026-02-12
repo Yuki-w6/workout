@@ -5,13 +5,19 @@ struct RecordListView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
     @Query(sort: \RecordHeader.date) private var records: [RecordHeader]
     @State private var selectedDate = Date()
-    @State private var displayedMonth = Date()
+    @State private var displayedMonth = Calendar.japaneseLocale.date(
+        from: Calendar.japaneseLocale.dateComponents([.year, .month], from: Date())
+    ) ?? Date()
+    private let baseMonth = Calendar.japaneseLocale.date(
+        from: Calendar.japaneseLocale.dateComponents([.year, .month], from: Date())
+    ) ?? Date()
     @State private var toastMessage = ""
     @State private var isToastPresented = false
     private let recordListBannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "RecordListBannerAdUnitID") as? String
     @Environment(\.modelContext) private var modelContext
 
     private let calendar = Calendar.japaneseLocale
+    private let monthOffsets = Array(-120...120)
 
     private var markedDates: Set<Date> {
         Set(records.map { calendar.startOfDay(for: $0.date) })
@@ -30,29 +36,25 @@ struct RecordListView: View {
             Group {
                 VStack(spacing: 12) {
                     HStack {
-                        Button {
-                            shiftMonth(by: -1)
-                        } label: {
-                            Image(systemName: "chevron.left")
-                        }
-                        Spacer()
                         Text(monthTitle(for: monthStart))
                             .font(.headline)
-                        Spacer()
-                        Button {
-                            shiftMonth(by: 1)
-                        } label: {
-                            Image(systemName: "chevron.right")
-                        }
                     }
                     .padding(.horizontal)
 
-                    CalendarMonthView(
-                        month: monthStart,
-                        selectedDate: $selectedDate,
-                        markedDates: markedDates
-                    )
-                    .padding(.horizontal)
+                    TabView(selection: $displayedMonth) {
+                        ForEach(monthOffsets, id: \.self) { offset in
+                            let month = calendar.date(byAdding: .month, value: offset, to: baseMonth) ?? baseMonth
+                            CalendarMonthView(
+                                month: month,
+                                selectedDate: $selectedDate,
+                                markedDates: markedDates
+                            )
+                            .padding(.horizontal)
+                            .tag(month)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(height: 300)
 
                     List {
                         if recordsForSelectedDate.isEmpty {
@@ -83,6 +85,9 @@ struct RecordListView: View {
                 }
             }
         }
+        .onChange(of: displayedMonth) { _, newValue in
+            selectedDate = newValue
+        }
     }
 
     private func showToast(_ message: String) {
@@ -111,13 +116,6 @@ struct RecordListView: View {
             try modelContext.save()
         } catch {
             modelContext.rollback()
-        }
-    }
-
-    private func shiftMonth(by value: Int) {
-        if let newMonth = calendar.date(byAdding: .month, value: value, to: monthStart) {
-            displayedMonth = newMonth
-            selectedDate = newMonth
         }
     }
 
