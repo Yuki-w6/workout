@@ -1,14 +1,11 @@
 import SwiftUI
 import SwiftData
 import UIKit
-import FirebaseCore
 import CloudKit
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        FirebaseApp.configure()
-        
         return true
     }
 }
@@ -53,19 +50,6 @@ struct workoutApp: App {
                         ContentView(viewModel: viewModel, isCloudSyncEnabled: $isCloudSyncEnabled)
                             .modelContainer(container.modelContainer)
                             .disabled(appState.isImporting)
-                            .task {
-                                #if DEBUG
-                                // Xcode Preview 判定（環境変数）
-                                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-                                    return
-                                }
-                                #endif
-                                
-                                // AdsInitializer は @MainActor なので MainActor 上で呼ぶ
-                                await MainActor.run {
-                                    ads.startIfNeeded()
-                                }
-                            }
 
                         if let warningMessage = appState.warningMessage {
                             HStack(spacing: 12) {
@@ -118,6 +102,17 @@ struct workoutApp: App {
                 }
             }
             .task {
+                #if DEBUG
+                // Xcode Preview 判定（環境変数）
+                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                    await appState.loadContainer(useCloud: isCloudSyncEnabled)
+                    return
+                }
+                #endif
+
+                await MainActor.run {
+                    ads.startIfNeeded()
+                }
                 await appState.loadContainer(useCloud: isCloudSyncEnabled)
             }
             .onChange(of: isCloudSyncEnabled) { _, newValue in
@@ -187,7 +182,9 @@ private final class AppState: ObservableObject {
             warningMessage = nil
             let detail = (error as NSError).localizedDescription
             let nsError = error as NSError
+#if DEBUG
             print("ModelContainer error:", nsError.domain, nsError.code, nsError.userInfo)
+#endif
             errorMessage = "データの初期化に失敗しました。\n\(detail)\n再起動しても改善しない場合はお問い合わせください。"
         }
     }

@@ -115,6 +115,8 @@ struct ExerciseDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .navigationTitle(currentExercise?.name ?? "Exercise")
+        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: focusedField) {
             selectAllIfNeeded(for: focusedField)
         }
@@ -127,29 +129,21 @@ struct ExerciseDetailView: View {
                 }
                 .accessibilityLabel("戻る")
             }
-            ToolbarItem(placement: .principal) {
-                Text(currentExercise?.name ?? "Exercise")
-                    .font(.headline)
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("保存") {
                     attemptSave(for: recordDate)
                 }
                 .accessibilityLabel("記録を保存")
             }
-            ToolbarItem(placement: .keyboard) {
-                HStack(spacing: 12) {
-                    Spacer()
-                    Button("<") {
-                        focusPreviousField()
-                    }
-                    .keyboardButtonStyle()
-                    Button(">") {
-                        focusNextField()
-                    }
-                    .keyboardButtonStyle()
+            ToolbarItemGroup(placement: .keyboard) {
+                Button("<") {
+                    focusPreviousField()
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .keyboardButtonStyle()
+                Button(">") {
+                    focusNextField()
+                }
+                .keyboardButtonStyle()
             }
         }
         .sheet(isPresented: $isEditing) {

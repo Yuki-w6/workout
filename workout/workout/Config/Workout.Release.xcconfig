@@ -1,1 +1,5 @@
+BANNER_AD_UNIT_ID =
+RECORD_LIST_BANNER_AD_UNIT_ID =
+GRAPH_BANNER_AD_UNIT_ID =
 
+#include? "Secrets.xcconfig"

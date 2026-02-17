@@ -1,60 +1,39 @@
 import AppTrackingTransparency
+import FirebaseCore
 import GoogleMobileAds
 import SwiftUI
 
 @MainActor
 final class AdsInitializer: ObservableObject {
-    @AppStorage("hasRequestedTrackingAuthorization") private var hasRequested = false
-    private var hasStartedAds = false
+    private var hasStartedSDKs = false
     
     /// アプリ起動時などに呼ぶ（何度呼んでも安全）
     func startIfNeeded() {
-        // すでに広告を開始していたら何もしない
-        guard !hasStartedAds else { return }
-        
-        // まずは「ATTを聞くべきか」を判断して、必要なら聞いてから開始
-        requestTrackingAuthorizationIfNeeded()
-    }
-    
-    private func requestTrackingAuthorizationIfNeeded() {
-        // すでにATTを“聞いたことがある”なら、広告開始へ
-        guard !hasRequested else {
-            startMobileAdsIfNeeded()
-            return
-        }
-        
+        // すでに初期化済みなら何もしない
+        guard !hasStartedSDKs else { return }
+
         if #available(iOS 14, *) {
-            let status = ATTrackingManager.trackingAuthorizationStatus
-            
             // notDetermined（未決定）のときだけダイアログを出す
-            guard status == .notDetermined else {
-                hasRequested = true
-                startMobileAdsIfNeeded()
-                return
+            if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+                Task { @MainActor in
+                    _ = await ATTrackingManager.requestTrackingAuthorization()
+                    self.startSDKsIfNeeded()
+                }
+            } else {
+                startSDKsIfNeeded()
             }
-
-            requestTrackingAuthorizationFromSystem()
         } else {
-            // iOS 13以下はATTがないので「聞いた扱い」にして広告開始
-            hasRequested = true
-            startMobileAdsIfNeeded()
+            // iOS 13以下はATTがないのでそのまま広告開始
+            startSDKsIfNeeded()
         }
     }
     
-    @MainActor
-    private func requestTrackingAuthorizationFromSystem() {
-        Task { @MainActor in
-            _ = await ATTrackingManager.requestTrackingAuthorization()
-            self.hasRequested = true
-            self.startMobileAdsIfNeeded()
-        }
-    }
-    
-    private func startMobileAdsIfNeeded() {
+    private func startSDKsIfNeeded() {
         // 二重起動防止
-        guard !hasStartedAds else { return }
-        hasStartedAds = true
+        guard !hasStartedSDKs else { return }
+        hasStartedSDKs = true
 
+        FirebaseApp.configure()
         MobileAds.shared.start(completionHandler: { _ in })
     }
 }
