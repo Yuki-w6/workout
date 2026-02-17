@@ -277,26 +277,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		FAE1C0A12F2A000100000001 /* Validate Release Ad Unit IDs */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Validate Release Ad Unit IDs";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  exit 0\nfi\n\nfor key in BANNER_AD_UNIT_ID RECORD_LIST_BANNER_AD_UNIT_ID GRAPH_BANNER_AD_UNIT_ID; do\n  value=\"$(eval echo \\\"\\${$key}\\\")\"\n  if [ -z \"${value}\" ]; then\n    echo \"error: ${key} is empty for Release. Set it in workout/Config/Secrets.xcconfig.\" >&2\n    exit 1\n  fi\ndone\n";
-			showEnvVarsInLog = 0;
-		};
 		46A8175A98EFD0F0E986000B /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -339,6 +319,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		FAE1C0A12F2A000100000001 /* Validate Release Ad Unit IDs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Validate Release Ad Unit IDs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  exit 0\nfi\n\nfor key in BANNER_AD_UNIT_ID RECORD_LIST_BANNER_AD_UNIT_ID GRAPH_BANNER_AD_UNIT_ID; do\n  value=\"$(eval echo \\\"\\${$key}\\\")\"\n  if [ -z \"${value}\" ]; then\n    echo \"error: ${key} is empty for Release. Set it in workout/Config/Secrets.xcconfig.\" >&2\n    exit 1\n  fi\ndone\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -511,7 +511,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;
@@ -554,7 +554,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				DEVELOPMENT_ASSET_PATHS = "\"workout/Preview Content\"";
 				DEVELOPMENT_TEAM = 62TRG6G4RG;
 				ENABLE_PREVIEWS = YES;

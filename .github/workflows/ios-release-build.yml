@@ -23,6 +23,19 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
+      - name: Validate required secrets
+        run: |
+          missing=0
+          for key in BANNER_AD_UNIT_ID RECORD_LIST_BANNER_AD_UNIT_ID GRAPH_BANNER_AD_UNIT_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required secret: ${key}"
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -workspace workout.xcworkspace -scheme workout
 
