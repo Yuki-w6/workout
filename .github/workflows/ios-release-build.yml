@@ -1,0 +1,33 @@
+name: iOS Release Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  release-build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: workout
+
+    env:
+      BANNER_AD_UNIT_ID: ${{ secrets.BANNER_AD_UNIT_ID }}
+      RECORD_LIST_BANNER_AD_UNIT_ID: ${{ secrets.RECORD_LIST_BANNER_AD_UNIT_ID }}
+      GRAPH_BANNER_AD_UNIT_ID: ${{ secrets.GRAPH_BANNER_AD_UNIT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -workspace workout.xcworkspace -scheme workout
+
+      - name: Generate Secrets.xcconfig
+        run: bash scripts/generate_secrets_xcconfig.sh
+
+      - name: Build Release
+        run: xcodebuild -workspace workout.xcworkspace -scheme workout -configuration Release -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
