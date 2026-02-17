@@ -2,4 +2,4 @@ BANNER_AD_UNIT_ID =
 RECORD_LIST_BANNER_AD_UNIT_ID =
 GRAPH_BANNER_AD_UNIT_ID =
 
-#include "workout/Config/Secrets.xcconfig"
+#include "Secrets.xcconfig"
