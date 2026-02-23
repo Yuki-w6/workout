@@ -1,4 +1,3 @@
-import AppTrackingTransparency
 import FirebaseCore
 import GoogleMobileAds
 import SwiftUI
@@ -11,21 +10,7 @@ final class AdsInitializer: ObservableObject {
     func startIfNeeded() {
         // すでに初期化済みなら何もしない
         guard !hasStartedSDKs else { return }
-
-        if #available(iOS 14, *) {
-            // notDetermined（未決定）のときだけダイアログを出す
-            if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
-                Task { @MainActor in
-                    _ = await ATTrackingManager.requestTrackingAuthorization()
-                    self.startSDKsIfNeeded()
-                }
-            } else {
-                startSDKsIfNeeded()
-            }
-        } else {
-            // iOS 13以下はATTがないのでそのまま広告開始
-            startSDKsIfNeeded()
-        }
+        startSDKsIfNeeded()
     }
     
     private func startSDKsIfNeeded() {

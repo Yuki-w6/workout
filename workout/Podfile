@@ -1,8 +1,7 @@
 platform :ios, '12.0'
 
-target 'workout' do
-  use_frameworks!
-  pod 'Google-Mobile-Ads-SDK'
+target 'WorkoutLogJP2026WOD01' do
+  # SPMを利用するためPods依存は追加しない
 
   target 'workoutTests' do
     inherit! :search_paths
