@@ -16,6 +16,8 @@ jobs:
       BANNER_AD_UNIT_ID: ${{ secrets.BANNER_AD_UNIT_ID }}
       RECORD_LIST_BANNER_AD_UNIT_ID: ${{ secrets.RECORD_LIST_BANNER_AD_UNIT_ID }}
       GRAPH_BANNER_AD_UNIT_ID: ${{ secrets.GRAPH_BANNER_AD_UNIT_ID }}
+      DISABLE_ADS: ${{ secrets.DISABLE_ADS }}
+      AD_EXCLUDED_DEVICE_IDS: ${{ secrets.AD_EXCLUDED_DEVICE_IDS }}
 
     steps:
       - uses: actions/checkout@v4

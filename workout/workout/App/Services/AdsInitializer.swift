@@ -10,6 +10,7 @@ final class AdsInitializer: ObservableObject {
     func startIfNeeded() {
         // すでに初期化済みなら何もしない
         guard !hasStartedSDKs else { return }
+        guard AdPolicy.isAdEnabled else { return }
         startSDKsIfNeeded()
     }
     

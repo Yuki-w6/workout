@@ -13,6 +13,8 @@ cd workout
 BANNER_AD_UNIT_ID='ca-app-pub-xxx/xxx' \
 RECORD_LIST_BANNER_AD_UNIT_ID='ca-app-pub-xxx/xxx' \
 GRAPH_BANNER_AD_UNIT_ID='ca-app-pub-xxx/xxx' \
+DISABLE_ADS='NO' \
+AD_EXCLUDED_DEVICE_IDS='XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX,YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY' \
 bash scripts/generate_secrets_xcconfig.sh
 ```
 
@@ -21,6 +23,8 @@ GitHub Actions では、以下の Repository Secrets を設定してください
 - `BANNER_AD_UNIT_ID`
 - `RECORD_LIST_BANNER_AD_UNIT_ID`
 - `GRAPH_BANNER_AD_UNIT_ID`
+- `DISABLE_ADS` (任意, `YES` で全広告無効)
+- `AD_EXCLUDED_DEVICE_IDS` (任意, `identifierForVendor` をカンマ区切り)
 
 ワークフロー: `.github/workflows/ios-release-build.yml`
 

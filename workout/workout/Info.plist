@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AdExcludedDeviceIDs</key>
+	<string>$(AD_EXCLUDED_DEVICE_IDS)</string>
 	<key>BannerAdUnitID</key>
 	<string>$(BANNER_AD_UNIT_ID)</string>
+	<key>DisableAds</key>
+	<string>$(DISABLE_ADS)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-1976866996688533~6909684310</string>
 	<key>GraphBannerAdUnitID</key>

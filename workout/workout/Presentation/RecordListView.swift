@@ -77,7 +77,7 @@ struct RecordListView: View {
             }
             .toast(message: toastMessage, isPresented: $isToastPresented)
             .safeAreaInset(edge: .bottom) {
-                if let adUnitID = recordListBannerAdUnitID, !adUnitID.isEmpty {
+                if AdPolicy.shouldShowBanner(adUnitID: recordListBannerAdUnitID), let adUnitID = recordListBannerAdUnitID {
                     BannerAdView(adUnitID: adUnitID)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)

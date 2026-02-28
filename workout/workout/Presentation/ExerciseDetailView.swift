@@ -136,6 +136,7 @@ struct ExerciseDetailView: View {
                 .accessibilityLabel("記録を保存")
             }
             ToolbarItemGroup(placement: .keyboard) {
+                Spacer() 
                 Button("<") {
                     focusPreviousField()
                 }

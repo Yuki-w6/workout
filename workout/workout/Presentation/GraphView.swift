@@ -49,7 +49,7 @@ struct GraphView: View {
             .coordinateSpace(name: "GraphViewSpace")
         }
         .safeAreaInset(edge: .bottom) {
-            if let adUnitID = graphBannerAdUnitID, !adUnitID.isEmpty {
+            if AdPolicy.shouldShowBanner(adUnitID: graphBannerAdUnitID), let adUnitID = graphBannerAdUnitID {
                 BannerAdView(adUnitID: adUnitID)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)

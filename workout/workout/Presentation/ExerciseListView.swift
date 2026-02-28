@@ -127,7 +127,7 @@ struct ExerciseListView: View {
                         searchBar
                     }
                     .safeAreaInset(edge: .bottom) {
-                        if let adUnitID = bannerAdUnitID, !adUnitID.isEmpty {
+                        if AdPolicy.shouldShowBanner(adUnitID: bannerAdUnitID), let adUnitID = bannerAdUnitID {
                             BannerAdView(adUnitID: adUnitID)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
