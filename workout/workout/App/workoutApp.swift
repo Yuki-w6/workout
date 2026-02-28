@@ -2,10 +2,17 @@ import SwiftUI
 import SwiftData
 import UIKit
 import CloudKit
+import FirebaseCore
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        // Firebase は広告ON/OFFに関係なく必ず初期化（Analytics/Crashlytics を止めない）
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
+        
         return true
     }
 }
@@ -17,7 +24,6 @@ struct workoutApp: App {
     @AppStorage("cloudSyncEnabled") private var isCloudSyncEnabled = true
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
-    
     init() {
         let appColor = UIColor(red: 0.992, green: 0.294, blue: 0.004, alpha: 1.0)
         let appearance = UITabBarAppearance()
@@ -28,12 +34,12 @@ struct workoutApp: App {
         appearance.inlineLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: appColor]
         appearance.compactInlineLayoutAppearance.selected.iconColor = appColor
         appearance.compactInlineLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: appColor]
-
+        
         let tabBar = UITabBar.appearance()
         tabBar.standardAppearance = appearance
         tabBar.scrollEdgeAppearance = appearance
     }
-
+    
     var body: some Scene {
         WindowGroup {
             Group {
@@ -50,7 +56,7 @@ struct workoutApp: App {
                         ContentView(viewModel: viewModel, isCloudSyncEnabled: $isCloudSyncEnabled)
                             .modelContainer(container.modelContainer)
                             .disabled(appState.isImporting)
-
+                        
                         if let warningMessage = appState.warningMessage {
                             HStack(spacing: 12) {
                                 Text(warningMessage)
@@ -102,14 +108,14 @@ struct workoutApp: App {
                 }
             }
             .task {
-                #if DEBUG
+#if DEBUG
                 // Xcode Preview 判定（環境変数）
                 if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
                     await appState.loadContainer(useCloud: isCloudSyncEnabled)
                     return
                 }
-                #endif
-
+#endif
+                
                 await MainActor.run {
                     ads.startIfNeeded()
                 }
@@ -120,7 +126,7 @@ struct workoutApp: App {
             }
         }
     }
-
+    
     private var statusMessage: String {
         if appState.isImporting {
             return "引き継ぎ中..."
@@ -131,7 +137,7 @@ struct workoutApp: App {
 
 private struct SyncSkeletonView: View {
     let title: String
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title)
@@ -169,7 +175,7 @@ private final class AppState: ObservableObject {
     @Published var warningMessage: String?
     @Published var isImporting = false
     @Published var isCloudAvailable = false
-
+    
     func loadContainer(useCloud: Bool) async {
         errorMessage = nil
         do {
@@ -188,5 +194,4 @@ private final class AppState: ObservableObject {
             errorMessage = "データの初期化に失敗しました。\n\(detail)\n再起動しても改善しない場合はお問い合わせください。"
         }
     }
-
 }
