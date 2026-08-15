@@ -1,0 +1,122 @@
+import Foundation
+import SwiftData
+
+public enum BodyPart: String, Codable, CaseIterable {
+    case chest
+    case back
+    case legs
+    case shoulders
+    case arms
+    case glutes
+    case core
+    case fullBody
+    case other
+}
+
+public enum WeightUnit: String, Codable, CaseIterable {
+    case kg
+    case lb
+}
+
+public extension BodyPart {
+    var displayName: String {
+        switch self {
+        case .chest:
+            return "胸"
+        case .back:
+            return "背中"
+        case .legs:
+            return "脚"
+        case .shoulders:
+            return "肩"
+        case .arms:
+            return "腕"
+        case .glutes:
+            return "お尻"
+        case .core:
+            return "お腹"
+        case .fullBody:
+            return "全身"
+        case .other:
+            return "その他"
+        }
+    }
+}
+
+public extension WeightUnit {
+    var displayName: String {
+        switch self {
+        case .kg:
+            return "kg"
+        case .lb:
+            return "lbs"
+        }
+    }
+}
+
+@Model
+public final class Exercise {
+    public var id: UUID = UUID()
+    public var name: String = ""
+
+    // enumはrawで保存（将来case追加/名前変更しても事故りにくい）
+    public var bodyPartRaw: String = BodyPart.other.rawValue
+    public var defaultWeightUnitRaw: String = WeightUnit.kg.rawValue
+
+    // プリセット判定
+    public var isPreset: Bool = false
+
+    // プリセット更新用（プリセットは必須、ユーザー作成はnil）
+    public var seedKey: String?
+    public var seedVersion: Int = 0
+
+    // 論理削除（アーカイブ）
+    public var isArchived: Bool = false
+
+    public var presetSortKey: Int = 1
+
+    @Relationship
+    public var templateSets: [ExerciseTemplateSet]? = []
+
+    @Relationship
+    public var recordHeaders: [RecordHeader]? = []
+
+    public init(
+        id: UUID = UUID(),
+        name: String,
+        bodyPart: BodyPart,
+        defaultWeightUnit: WeightUnit,
+        isPreset: Bool = false,
+        seedKey: String? = nil,
+        seedVersion: Int = 0,
+        isArchived: Bool = false
+    ) {
+        // 運用ルールをモデル内で強制（崩れたデータを作らせない）
+        if isPreset {
+            precondition(seedKey != nil && !seedKey!.isEmpty, "Preset exercise must have seedKey")
+        } else {
+            precondition(seedKey == nil, "User exercise must not have seedKey")
+        }
+
+        self.id = id
+        self.name = name
+        self.bodyPartRaw = bodyPart.rawValue
+        self.defaultWeightUnitRaw = defaultWeightUnit.rawValue
+        self.isPreset = isPreset
+        self.seedKey = seedKey
+        self.seedVersion = seedVersion
+        self.isArchived = isArchived
+
+        self.presetSortKey = isPreset ? 0 : 1
+    }
+
+    public var bodyPart: BodyPart {
+        get { BodyPart(rawValue: bodyPartRaw) ?? .other }
+        set { bodyPartRaw = newValue.rawValue }
+    }
+
+    public var defaultWeightUnit: WeightUnit {
+        get { WeightUnit(rawValue: defaultWeightUnitRaw) ?? .kg }
+        set { defaultWeightUnitRaw = newValue.rawValue }
+    }
+}
