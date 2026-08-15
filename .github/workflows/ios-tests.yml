@@ -19,6 +19,9 @@ jobs:
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -workspace workout.xcworkspace -scheme workout
 
+      - name: Generate placeholder GoogleService-Info.plist
+        run: bash scripts/generate_placeholder_google_service_info.sh
+
       - name: Run app unit tests
         run: |
           xcodebuild test \
