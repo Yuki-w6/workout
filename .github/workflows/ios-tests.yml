@@ -1,0 +1,36 @@
+name: iOS Tests
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: workout
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -workspace workout.xcworkspace -scheme workout
+
+      - name: Run app unit tests
+        run: |
+          xcodebuild test \
+            -workspace workout.xcworkspace \
+            -scheme workout \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -only-testing:workoutTests
+
+      - name: Run WorkoutShared package tests
+        working-directory: workout/WorkoutShared
+        run: |
+          xcodebuild test \
+            -scheme WorkoutShared \
+            -destination 'platform=iOS Simulator,name=iPhone 16'
