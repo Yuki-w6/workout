@@ -41,4 +41,11 @@ final class RecordHeader {
     var defaultWeightUnitSnapshot: WeightUnit {
         WeightUnit(rawValue: defaultWeightUnitRawSnapshot) ?? .kg
     }
+
+    // RecordSetが1件も無いRecordHeaderは「記録がある」とみなさない。
+    // (Watch側で記録ボタンの反応を速くするため、画面を開いた時点でsets 0件の
+    // ヘッダーを先行作成することがあるため、存在チェックだけでは不十分)
+    var hasRecordedSets: Bool {
+        !(sets ?? []).isEmpty
+    }
 }

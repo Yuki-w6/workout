@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import _______Watch_App
+@testable import 筋トレログ_Watch_App
 
 struct _______Watch_AppTests {
 

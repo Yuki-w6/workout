@@ -20,11 +20,11 @@ struct RecordListView: View {
     private let monthOffsets = Array(-120...120)
 
     private var markedDates: Set<Date> {
-        Set(records.map { calendar.startOfDay(for: $0.date) })
+        Set(records.filter(\.hasRecordedSets).map { calendar.startOfDay(for: $0.date) })
     }
 
     private var recordsForSelectedDate: [RecordHeader] {
-        records.filter { calendar.isDate($0.date, inSameDayAs: selectedDate) }
+        records.filter { $0.hasRecordedSets && calendar.isDate($0.date, inSameDayAs: selectedDate) }
     }
 
     private var monthStart: Date {
