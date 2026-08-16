@@ -193,6 +193,32 @@ struct RecordTests {
         #expect(headers.count == 2)
     }
 
+    @Test func hasRecordedSetsIsFalseForEmptyHeader() throws {
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+
+        let exercise = try makeExercise(context: context)
+        let header = RecordHeader(date: Date(), exercise: exercise)
+        context.insert(header)
+        try context.save()
+
+        #expect(header.hasRecordedSets == false)
+    }
+
+    @Test func hasRecordedSetsIsTrueOnceASetExists() throws {
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+
+        let exercise = try makeExercise(context: context)
+        let header = try makeHeader(context: context, exercise: exercise)
+        let set = RecordSet(setNumber: 1, weight: 60.0, weightUnit: .kg, repetitions: 5, header: header)
+        context.insert(set)
+        header.sets = [set]
+        try context.save()
+
+        #expect(header.hasRecordedSets == true)
+    }
+
     @Test func getRecordSetList() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)

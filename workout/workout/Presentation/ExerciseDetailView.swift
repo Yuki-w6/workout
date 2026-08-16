@@ -727,7 +727,8 @@ private extension ExerciseDetailView {
             predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID && $0.date == targetDate }
         )
         descriptor.fetchLimit = 1
-        return (try? modelContext.fetch(descriptor))?.first
+        // sets が0件のヘッダー(Watch側の先行作成等)は「記録がある」とみなさない。
+        return (try? modelContext.fetch(descriptor))?.first(where: \.hasRecordedSets)
     }
 
 

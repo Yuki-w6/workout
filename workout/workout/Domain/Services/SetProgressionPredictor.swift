@@ -35,7 +35,7 @@ struct SetProgressionPredictor {
     ) -> Double {
         let previousSetNumber = targetSetNumber - 1
 
-        if let mostRecentPast = history.max(by: { $0.date < $1.date }) {
+        if let mostRecentPast = history.filter(\.hasRecordedSets).max(by: { $0.date < $1.date }) {
             let pastSets = (mostRecentPast.sets ?? []).filter { $0.weightUnit == unit }
             if let previousPastSet = pastSets.first(where: { $0.setNumber == previousSetNumber }),
                let targetPastSet = pastSets.first(where: { $0.setNumber == targetSetNumber }) {

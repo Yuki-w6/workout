@@ -153,11 +153,11 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
     }
 
     private func hasRecords(for exerciseID: UUID) throws -> Bool {
-        var desc = FetchDescriptor<RecordHeader>(
+        let desc = FetchDescriptor<RecordHeader>(
             predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID }
         )
-        desc.fetchLimit = 1
-        return try context.fetch(desc).isEmpty == false
+        // sets が0件のヘッダー(Watch側の先行作成等)は「記録がある」に数えない。
+        return try context.fetch(desc).contains { $0.hasRecordedSets }
     }
 
     private let presetFirstComparator: (Bool, Bool) -> ComparisonResult = { lhs, rhs in

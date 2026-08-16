@@ -217,7 +217,7 @@ struct GraphView: View {
             return nil
         }
         let dates = records
-            .filter { $0.exerciseIDSnapshot == exercise.id }
+            .filter { $0.exerciseIDSnapshot == exercise.id && $0.hasRecordedSets }
             .map { calendar.startOfDay(for: $0.date) }
         guard let minDate = dates.min(), let maxDate = dates.max() else {
             return nil

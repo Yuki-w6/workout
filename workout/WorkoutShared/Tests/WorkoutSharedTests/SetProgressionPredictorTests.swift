@@ -107,6 +107,28 @@ struct SetProgressionPredictorTests {
         #expect(result?.weight == 40.0)
     }
 
+    @Test func ignoresEmptyMostRecentHeaderAndFallsBackToOlderValidHistory() {
+        // Watch側の先行作成等で、今日の空ヘッダー(setsなし)が一番新しい日付として
+        // 存在していても、有効なセットを持つ1つ前の履歴が使われるべき。
+        let exercise = Exercise(name: "Bench Press", bodyPart: .chest, defaultWeightUnit: .kg)
+        let olderHeader = makeHeader(
+            for: exercise,
+            date: Date(timeIntervalSince1970: 0),
+            sets: [(1, 100.0, 5), (2, 95.0, 5)] // 差分-5
+        )
+        let emptyTodayHeader = RecordHeader(date: Date(timeIntervalSince1970: 86_400), exercise: exercise)
+
+        let predictor = SetProgressionPredictor()
+        let result = predictor.predictNextSet(
+            todayWeights: [110.0],
+            todayReps: [5],
+            history: [olderHeader, emptyTodayHeader],
+            unit: .kg
+        )
+
+        #expect(result?.weight == 105.0) // 110 + (-5)
+    }
+
     @Test func returnsNilWhenTodayHasNoSetsYet() {
         let predictor = SetProgressionPredictor()
         let result = predictor.predictNextSet(
