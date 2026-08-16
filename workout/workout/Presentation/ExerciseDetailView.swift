@@ -686,6 +686,8 @@ private extension ExerciseDetailView {
             for recordSet in existing.sets ?? [] {
                 modelContext.delete(recordSet)
             }
+        } else if let emptyExisting = fetchEmptyRecordHeader(for: targetDate) {
+            header = emptyExisting
         } else {
             header = RecordHeader(date: targetDate, exercise: exercise)
             modelContext.insert(header)
@@ -723,12 +725,24 @@ private extension ExerciseDetailView {
 
     func fetchRecordHeader(for date: Date) -> RecordHeader? {
         let targetDate = calendar.startOfDay(for: date)
-        var descriptor = FetchDescriptor<RecordHeader>(
+        let descriptor = FetchDescriptor<RecordHeader>(
             predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID && $0.date == targetDate }
         )
-        descriptor.fetchLimit = 1
-        // sets が0件のヘッダー(Watch側の先行作成等)は「記録がある」とみなさない。
-        return (try? modelContext.fetch(descriptor))?.first(where: \.hasRecordedSets)
+        // 同じ種目・日付に複数件のヘッダーが存在しうる(Watch側の先行作成による空ヘッダーと
+        // 実データを持つヘッダーの競合等)ため、fetchLimitで1件に絞る前に全件から
+        // sets が0件でない(実データを持つ)ものを探す。1件に絞ってからフィルタすると、
+        // たまたま空ヘッダーの方が取得されて実データを見失うことがある。
+        return ((try? modelContext.fetch(descriptor)) ?? []).first(where: \.hasRecordedSets)
+    }
+
+    // 保存時、実データが無い場合の書き込み先探し用。Watch側の先行作成等で残っている
+    // 空ヘッダーがあればそれを再利用し、重複したヘッダーを新規作成しないようにする。
+    private func fetchEmptyRecordHeader(for date: Date) -> RecordHeader? {
+        let targetDate = calendar.startOfDay(for: date)
+        let descriptor = FetchDescriptor<RecordHeader>(
+            predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID && $0.date == targetDate }
+        )
+        return ((try? modelContext.fetch(descriptor)) ?? []).first { !$0.hasRecordedSets }
     }
 
 

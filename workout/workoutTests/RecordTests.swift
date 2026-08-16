@@ -193,6 +193,43 @@ struct RecordTests {
         #expect(headers.count == 2)
     }
 
+    @Test func findingRealHeaderAmongDuplicatesDoesNotDependOnFetchOrder() throws {
+        // Watch側の先行作成による空ヘッダーと、実データを持つヘッダーが同じ種目・日付で
+        // 重複して存在しうる状況を再現する。fetchLimitで1件に絞ってからhasRecordedSetsで
+        // フィルタすると、たまたま空ヘッダーが先に取得された場合に実データを見失う
+        // (ExerciseDetailView.fetchRecordHeaderの回帰テスト)。
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+
+        let exercise = try makeExercise(context: context)
+        let sameDate = Date(timeIntervalSince1970: 0)
+
+        // 先に空ヘッダーを作る(Watch側の先行作成を想定)
+        let emptyHeader = RecordHeader(date: sameDate, exercise: exercise)
+        context.insert(emptyHeader)
+
+        // 後から実データを持つヘッダーが作られる(iOS側での重複作成を想定)
+        let realHeader = RecordHeader(date: sameDate, exercise: exercise)
+        context.insert(realHeader)
+        let set = RecordSet(setNumber: 1, weight: 60.0, weightUnit: .kg, repetitions: 5, header: realHeader)
+        context.insert(set)
+        realHeader.sets = [set]
+
+        try context.save()
+
+        let exerciseID = exercise.id
+        let descriptor = FetchDescriptor<RecordHeader>(
+            predicate: #Predicate<RecordHeader> { $0.exerciseIDSnapshot == exerciseID && $0.date == sameDate }
+        )
+        let candidates = try context.fetch(descriptor)
+        #expect(candidates.count == 2)
+
+        // fetchLimitで1件に絞らず全件からhasRecordedSetsを満たすものを探せば、
+        // 挿入順や取得順に関係なく必ず実データを持つヘッダーが見つかる。
+        let found = candidates.first(where: \.hasRecordedSets)
+        #expect(found?.id == realHeader.id)
+    }
+
     @Test func hasRecordedSetsIsFalseForEmptyHeader() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
