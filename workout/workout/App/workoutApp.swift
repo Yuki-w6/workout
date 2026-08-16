@@ -12,7 +12,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
         }
-        
+
         return true
     }
 }
