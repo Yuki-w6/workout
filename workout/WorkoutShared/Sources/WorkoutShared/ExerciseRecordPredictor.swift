@@ -1,19 +1,19 @@
 import Foundation
 
-struct ExerciseRecordPrediction {
-    let setNumber: Int
-    let weight: Double?
-    let reps: Int?
+public struct ExerciseRecordPrediction {
+    public let setNumber: Int
+    public let weight: Double?
+    public let reps: Int?
 }
 
-struct ExerciseRecordPredictor {
-    let maxSamplesPerSet: Int
+public struct ExerciseRecordPredictor {
+    public let maxSamplesPerSet: Int
 
-    init(maxSamplesPerSet: Int = 3) {
+    public init(maxSamplesPerSet: Int = 3) {
         self.maxSamplesPerSet = maxSamplesPerSet
     }
 
-    func predict(records: [RecordHeader], unit: WeightUnit, maxSetNumber: Int) -> [Int: ExerciseRecordPrediction] {
+    public func predict(records: [RecordHeader], unit: WeightUnit, maxSetNumber: Int) -> [Int: ExerciseRecordPrediction] {
         var weightSamples: [Int: [Double]] = [:]
         var repsSamples: [Int: [Double]] = [:]
         var weightDeltas: [Double] = []

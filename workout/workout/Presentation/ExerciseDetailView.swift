@@ -229,7 +229,7 @@ struct ExerciseDetailView: View {
             }
         } else {
             unit = WeightUnit(rawValue: lastWeightUnitRaw) ?? exercise.defaultWeightUnit
-            sets = ExerciseSetInput.defaultSets()
+            sets = buildSuggestedSets(for: exercise, unit: unit)
             if sets.last.map(isEmptySet) != true {
                 sets.append(ExerciseSetInput())
             }
@@ -237,6 +237,44 @@ struct ExerciseDetailView: View {
                 setInitialFocus(toLastSet: false)
             }
         }
+    }
+
+    private func buildSuggestedSets(for exercise: Exercise, unit: WeightUnit) -> [ExerciseSetInput] {
+        let history = fetchAllHeaders(for: exercise.id)
+        guard !history.isEmpty else {
+            return ExerciseSetInput.defaultSets()
+        }
+
+        let predictor = ExerciseRecordPredictor()
+        let firstPrediction = predictor.predict(records: history, unit: unit, maxSetNumber: 1)[1]
+        guard let firstWeight = firstPrediction?.weight, let firstReps = firstPrediction?.reps else {
+            return ExerciseSetInput.defaultSets()
+        }
+
+        var todayWeights = [firstWeight]
+        var todayReps = [firstReps]
+        var result = [ExerciseSetInput(weight: firstWeight, reps: firstReps)]
+
+        let progressionPredictor = SetProgressionPredictor()
+        while result.count < 3,
+              let next = progressionPredictor.predictNextSet(
+                  todayWeights: todayWeights,
+                  todayReps: todayReps,
+                  history: history,
+                  unit: unit
+              ) {
+            todayWeights.append(next.weight)
+            todayReps.append(next.reps)
+            result.append(ExerciseSetInput(weight: next.weight, reps: next.reps))
+        }
+        return result
+    }
+
+    private func fetchAllHeaders(for exerciseID: UUID) -> [RecordHeader] {
+        let descriptor = FetchDescriptor<RecordHeader>(
+            predicate: #Predicate { $0.exerciseIDSnapshot == exerciseID }
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
     }
 
     private func saveRecord(for date: Date) {
@@ -539,6 +577,12 @@ private struct ExerciseSetInput: Identifiable {
         weight = recordSet.weight == 0 ? "" : String(recordSet.weight)
         reps = recordSet.repetitions == 0 ? "" : String(recordSet.repetitions)
         memo = recordSet.memo ?? ""
+    }
+
+    init(weight: Double, reps: Int) {
+        let roundedWeight = (weight * 2).rounded() / 2
+        self.weight = roundedWeight > 0 ? String(roundedWeight) : ""
+        self.reps = reps > 0 ? String(reps) : ""
     }
 
     static func defaultSets() -> [ExerciseSetInput] {

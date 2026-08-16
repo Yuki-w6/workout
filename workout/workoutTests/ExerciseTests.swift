@@ -1,14 +1,14 @@
 import Foundation
 import SwiftData
 import Testing
-@testable import workout
+@testable import WorkoutLogJP2026WOD01
 
 struct ExerciseTests {
     @Test func addExercise() throws {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
-        let exercise = Exercise(name: "Bench Press", bodyPart: .chest)
+        let exercise = Exercise(name: "Bench Press", bodyPart: .chest, defaultWeightUnit: .kg)
         context.insert(exercise)
         try context.save()
 
@@ -20,7 +20,7 @@ struct ExerciseTests {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
-        let exercise = Exercise(name: "Squat", bodyPart: .legs)
+        let exercise = Exercise(name: "Squat", bodyPart: .legs, defaultWeightUnit: .kg)
         context.insert(exercise)
         try context.save()
 
@@ -35,7 +35,7 @@ struct ExerciseTests {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
-        let exercise = Exercise(name: "Deadlift", bodyPart: .back)
+        let exercise = Exercise(name: "Deadlift", bodyPart: .back, defaultWeightUnit: .kg)
         context.insert(exercise)
         try context.save()
 
@@ -53,7 +53,7 @@ struct ExerciseTests {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
-        let exercise = Exercise(name: "Pull Up", bodyPart: .back)
+        let exercise = Exercise(name: "Pull Up", bodyPart: .back, defaultWeightUnit: .kg)
         context.insert(exercise)
         try context.save()
 
@@ -68,8 +68,8 @@ struct ExerciseTests {
         let container = try makeTestContainer()
         let context = ModelContext(container)
 
-        context.insert(Exercise(name: "Bench Press", bodyPart: .chest))
-        context.insert(Exercise(name: "Overhead Press", bodyPart: .shoulders))
+        context.insert(Exercise(name: "Bench Press", bodyPart: .chest, defaultWeightUnit: .kg))
+        context.insert(Exercise(name: "Overhead Press", bodyPart: .shoulders, defaultWeightUnit: .kg))
         try context.save()
 
         let exercises = try context.fetch(FetchDescriptor<Exercise>())

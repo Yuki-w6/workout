@@ -3,4 +3,7 @@ workout/GoogleService-Info.plist
 workout.xcodeproj/xcuserdata/
 # local secrets
 Secrets.xcconfig
+# local SPM package build output
+WorkoutShared/.build/
+WorkoutShared/build/
 

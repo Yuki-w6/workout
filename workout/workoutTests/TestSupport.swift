@@ -1,13 +1,12 @@
 import SwiftData
-@testable import workout
+@testable import WorkoutLogJP2026WOD01
 
 func makeTestContainer() throws -> ModelContainer {
     let schema = Schema([
         Exercise.self,
-        ExerciseSet.self,
-        Menu.self,
+        ExerciseTemplateSet.self,
         RecordHeader.self,
-        RecordDetail.self,
+        RecordSet.self,
     ])
     let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     return try ModelContainer(for: schema, configurations: [configuration])
