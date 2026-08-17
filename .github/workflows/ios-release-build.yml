@@ -7,7 +7,7 @@ on:
 
 jobs:
   release-build:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         working-directory: workout
@@ -49,4 +49,4 @@ jobs:
         run: bash scripts/generate_google_service_info.sh
 
       - name: Build Release
-        run: xcodebuild -workspace workout.xcworkspace -scheme workout -configuration Release -destination 'platform=iOS Simulator,name=iPhone 16' build
+        run: xcodebuild -workspace workout.xcworkspace -scheme workout -configuration Release -destination 'platform=iOS Simulator,name=iPhone 17' build
