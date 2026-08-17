@@ -49,4 +49,4 @@ jobs:
         run: bash scripts/generate_google_service_info.sh
 
       - name: Build Release
-        run: xcodebuild -workspace workout.xcworkspace -scheme workout -configuration Release -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
+        run: xcodebuild -workspace workout.xcworkspace -scheme workout -configuration Release -destination 'platform=iOS Simulator,name=iPhone 16' build
