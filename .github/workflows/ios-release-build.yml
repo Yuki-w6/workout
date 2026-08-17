@@ -18,6 +18,7 @@ jobs:
       GRAPH_BANNER_AD_UNIT_ID: ${{ secrets.GRAPH_BANNER_AD_UNIT_ID }}
       DISABLE_ADS: ${{ secrets.DISABLE_ADS }}
       AD_EXCLUDED_DEVICE_IDS: ${{ secrets.AD_EXCLUDED_DEVICE_IDS }}
+      GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
 
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +29,7 @@ jobs:
       - name: Validate required secrets
         run: |
           missing=0
-          for key in BANNER_AD_UNIT_ID RECORD_LIST_BANNER_AD_UNIT_ID GRAPH_BANNER_AD_UNIT_ID; do
+          for key in BANNER_AD_UNIT_ID RECORD_LIST_BANNER_AD_UNIT_ID GRAPH_BANNER_AD_UNIT_ID GOOGLE_SERVICE_INFO_PLIST_BASE64; do
             if [ -z "${!key}" ]; then
               echo "::error::Missing required secret: ${key}"
               missing=1
@@ -43,6 +44,9 @@ jobs:
 
       - name: Generate Secrets.xcconfig
         run: bash scripts/generate_secrets_xcconfig.sh
+
+      - name: Generate GoogleService-Info.plist
+        run: bash scripts/generate_google_service_info.sh
 
       - name: Build Release
         run: xcodebuild -workspace workout.xcworkspace -scheme workout -configuration Release -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
