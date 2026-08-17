@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01E4A1C130333A890096E46B /* 筋トレログ Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D0E8AA6C85B82EAC5CB7901A /* WorkoutShared in Frameworks */ = {isa = PBXBuildFile; productRef = D5CD215D9B57C410CE83CBAF /* WorkoutShared */; };
 		EB9B9D990E1D78116BF631E2 /* WorkoutShared in Frameworks */ = {isa = PBXBuildFile; productRef = D5CD215D9B57C410CE83CBAF /* WorkoutShared */; };
 		FA9C73162F1CA59A00441491 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = FA9C73152F1CA59A00441491 /* FirebaseAnalytics */; };
@@ -29,6 +30,27 @@
 			remoteGlobalIDString = 01D03CD330304F7C0029C166;
 			remoteInfo = "筋トレログ Watch App";
 		};
+		01E4A1C230333A890096E46B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA301B412F05FB720005BF68 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 01D03CD330304F7C0029C166;
+			remoteInfo = "筋トレログ Watch App";
+		};
+		01E4A1C530333A9B0096E46B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA301B412F05FB720005BF68 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 01D03CD330304F7C0029C166;
+			remoteInfo = "筋トレログ Watch App";
+		};
+		01E4A1C730333AAF0096E46B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA301B412F05FB720005BF68 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 01D03CD330304F7C0029C166;
+			remoteInfo = "筋トレログ Watch App";
+		};
 		FA301B5C2F05FB760005BF68 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FA301B412F05FB720005BF68 /* Project object */;
@@ -44,6 +66,20 @@
 			remoteInfo = workout;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		01E4A1C430333A890096E46B /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				01E4A1C130333A890096E46B /* 筋トレログ Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "筋トレログ Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -154,6 +190,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		01E4A1C030333A890096E46B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		FA301B402F05FB720005BF68 = {
 			isa = PBXGroup;
 			children = (
@@ -165,6 +208,7 @@
 				01D03CED30304F7D0029C166 /* 筋トレログ Watch AppUITests */,
 				FA301B4A2F05FB730005BF68 /* Products */,
 				FA73889B2F128A42004D1470 /* Recovered References */,
+				01E4A1C030333A890096E46B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -272,10 +316,14 @@
 				FA301B462F05FB720005BF68 /* Frameworks */,
 				FA301B472F05FB720005BF68 /* Resources */,
 				FAE1C0A12F2A000100000001 /* Validate Release Ad Unit IDs */,
+				01E4A1C430333A890096E46B /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				01E4A1C330333A890096E46B /* PBXTargetDependency */,
+				01E4A1C630333A9B0096E46B /* PBXTargetDependency */,
+				01E4A1C830333AAF0096E46B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				FA301B4B2F05FB730005BF68 /* workout */,
@@ -513,6 +561,21 @@
 			isa = PBXTargetDependency;
 			target = 01D03CD330304F7C0029C166 /* 筋トレログ Watch App */;
 			targetProxy = 01D03CEB30304F7D0029C166 /* PBXContainerItemProxy */;
+		};
+		01E4A1C330333A890096E46B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 01D03CD330304F7C0029C166 /* 筋トレログ Watch App */;
+			targetProxy = 01E4A1C230333A890096E46B /* PBXContainerItemProxy */;
+		};
+		01E4A1C630333A9B0096E46B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 01D03CD330304F7C0029C166 /* 筋トレログ Watch App */;
+			targetProxy = 01E4A1C530333A9B0096E46B /* PBXContainerItemProxy */;
+		};
+		01E4A1C830333AAF0096E46B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 01D03CD330304F7C0029C166 /* 筋トレログ Watch App */;
+			targetProxy = 01E4A1C730333AAF0096E46B /* PBXContainerItemProxy */;
 		};
 		FA301B5D2F05FB760005BF68 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
