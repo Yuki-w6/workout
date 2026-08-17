@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01E4A1C130333A890096E46B /* 筋トレログ Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		01E4A1C130333A890096E46B /* 筋トレログ Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D0E8AA6C85B82EAC5CB7901A /* WorkoutShared in Frameworks */ = {isa = PBXBuildFile; productRef = D5CD215D9B57C410CE83CBAF /* WorkoutShared */; };
 		EB9B9D990E1D78116BF631E2 /* WorkoutShared in Frameworks */ = {isa = PBXBuildFile; productRef = D5CD215D9B57C410CE83CBAF /* WorkoutShared */; };
 		FA9C73162F1CA59A00441491 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = FA9C73152F1CA59A00441491 /* FirebaseAnalytics */; };
