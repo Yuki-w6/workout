@@ -28,7 +28,7 @@ jobs:
             -workspace workout.xcworkspace \
             -scheme workout \
             -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
             -only-testing:workoutTests
 
       - name: Run WorkoutShared package tests
@@ -36,4 +36,4 @@ jobs:
         run: |
           xcodebuild test \
             -scheme WorkoutShared \
-            -destination 'platform=iOS Simulator,name=iPhone 16'
+            -destination 'platform=iOS Simulator,name=iPhone 17'
