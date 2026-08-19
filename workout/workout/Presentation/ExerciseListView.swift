@@ -323,17 +323,15 @@ struct ExerciseListView: View {
             navigationPath.append(ExerciseNavigationTarget.exercise(exercise.id))
         }
         .accessibilityAddTraits(.isButton)
-        .swipeActions(edge: .trailing, allowsFullSwipe: !isPresetLike(exercise)) {
-            if !isPresetLike(exercise) {
-                Button(role: .destructive) {
-                    let failedIds = viewModel.deleteExercises(ids: [exercise.id])
-                    if !failedIds.isEmpty {
-                        isDeleteBlockedAlertPresented = true
-                        return
-                    }
-                } label: {
-                    Label("削除", systemImage: "trash")
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                let failedIds = viewModel.deleteExercises(ids: [exercise.id])
+                if !failedIds.isEmpty {
+                    isDeleteBlockedAlertPresented = true
+                    return
                 }
+            } label: {
+                Label("削除", systemImage: "trash")
             }
             Button {
                 editingExercise = exercise
@@ -395,12 +393,6 @@ struct ExerciseListView: View {
         toastMessage = message
         withAnimation(.easeInOut(duration: 0.2)) {
             isToastPresented = true
-        }
-    }
-
-    private func isPresetLike(_ exercise: Exercise) -> Bool {
-        PresetExerciseDefinitions.all.contains { preset in
-            preset.name == exercise.name && preset.bodyPart.rawValue == exercise.bodyPartRaw
         }
     }
 

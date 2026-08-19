@@ -4,6 +4,12 @@ import Foundation
 final class ExerciseListViewModel: ObservableObject {
     @Published private(set) var exercises: [Exercise] = []
 
+    // プリセット行の抑止判定はアーカイブ済みも含めて行う。
+    // アクティブな種目だけで判定すると、削除した種目が「未作成のプリセット」として
+    // すぐに再表示され、タップすると復活してしまう。
+    private var materializedPresetIDs: Set<UUID> = []
+    private var materializedSeedKeys: Set<String> = []
+
     private let fetchExercises: FetchExercisesUseCase
     private let fetchExerciseUseCase: FetchExerciseUseCase
     private let addExercise: AddExerciseUseCase
@@ -26,6 +32,10 @@ final class ExerciseListViewModel: ObservableObject {
 
     func load() {
         exercises = dedupeByID(fetchExercises.execute())
+
+        let allExercises = fetchExercises.execute(includeArchived: true)
+        materializedPresetIDs = Set(allExercises.filter { $0.isPreset }.map { $0.id })
+        materializedSeedKeys = Set(allExercises.compactMap { $0.seedKey })
     }
 
     func exercises(matching searchText: String) -> [Exercise] {
@@ -36,11 +46,9 @@ final class ExerciseListViewModel: ObservableObject {
 
     func availablePresets(matching searchText: String) -> [PresetExerciseDefinition] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let existingPresetIDs = Set(exercises.filter { $0.isPreset }.map { $0.id })
-        let existingSeedKeys = Set(exercises.compactMap { $0.seedKey })
         return PresetExerciseDefinitions.all.filter { preset in
-            guard existingPresetIDs.contains(preset.id) == false else { return false }
-            guard existingSeedKeys.contains(preset.seedKey) == false else { return false }
+            guard materializedPresetIDs.contains(preset.id) == false else { return false }
+            guard materializedSeedKeys.contains(preset.seedKey) == false else { return false }
             guard !trimmed.isEmpty else { return true }
             return preset.name.localizedCaseInsensitiveContains(trimmed)
         }
