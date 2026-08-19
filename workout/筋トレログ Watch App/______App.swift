@@ -15,7 +15,9 @@ struct _______Watch_AppApp: App {
 
     init() {
         do {
-            modelContainer = try WatchModelContainer.make()
+            let container = try WatchModelContainer.make()
+            WatchSampleData.seedIfNeeded(in: ModelContext(container))
+            modelContainer = container
             modelContainerError = nil
         } catch {
             modelContainer = nil

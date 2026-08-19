@@ -26,6 +26,7 @@ final class AppContainer {
         }
         let modelContainer = try ModelContainer(for: schema, configurations: [configuration])
         let container = AppContainer(modelContainer: modelContainer)
+        try PresetExerciseSeeder(context: modelContainer.mainContext).seedIfNeeded()
         try normalizePresetExercisesIfNeeded(context: modelContainer.mainContext)
         return (container, nil)
     }

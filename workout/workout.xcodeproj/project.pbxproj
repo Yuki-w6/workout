@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01E4A1C130333A890096E46B /* 筋トレログ Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		01E4A1C130333A890096E46B /* WorkoutLogWatchApp.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 01D03CD430304F7C0029C166 /* WorkoutLogWatchApp.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D0E8AA6C85B82EAC5CB7901A /* WorkoutShared in Frameworks */ = {isa = PBXBuildFile; productRef = D5CD215D9B57C410CE83CBAF /* WorkoutShared */; };
 		EB9B9D990E1D78116BF631E2 /* WorkoutShared in Frameworks */ = {isa = PBXBuildFile; productRef = D5CD215D9B57C410CE83CBAF /* WorkoutShared */; };
 		FA9C73162F1CA59A00441491 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = FA9C73152F1CA59A00441491 /* FirebaseAnalytics */; };
@@ -74,7 +74,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				01E4A1C130333A890096E46B /* 筋トレログ Watch App.app in Embed Watch Content */,
+				01E4A1C130333A890096E46B /* WorkoutLogWatchApp.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -82,7 +82,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "筋トレログ Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		01D03CD430304F7C0029C166 /* WorkoutLogWatchApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutLogWatchApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		01D03CE030304F7D0029C166 /* 筋トレログ Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "筋トレログ Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		01D03CEA30304F7D0029C166 /* 筋トレログ Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "筋トレログ Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D4E5F60718293A4B5D /* workout/GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "workout/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -218,7 +218,7 @@
 				FA301B492F05FB730005BF68 /* WorkoutLogJP2026WOD01.app */,
 				FA301B5B2F05FB760005BF68 /* workoutTests.xctest */,
 				FA301B652F05FB760005BF68 /* workoutUITests.xctest */,
-				01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */,
+				01D03CD430304F7C0029C166 /* WorkoutLogWatchApp.app */,
 				01D03CE030304F7D0029C166 /* 筋トレログ Watch AppTests.xctest */,
 				01D03CEA30304F7D0029C166 /* 筋トレログ Watch AppUITests.xctest */,
 			);
@@ -258,7 +258,7 @@
 				D5CD215D9B57C410CE83CBAF /* WorkoutShared */,
 			);
 			productName = "筋トレログ Watch App";
-			productReference = 01D03CD430304F7C0029C166 /* 筋トレログ Watch App.app */;
+			productReference = 01D03CD430304F7C0029C166 /* WorkoutLogWatchApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 		01D03CDF30304F7D0029C166 /* 筋トレログ Watch AppTests */ = {
@@ -593,6 +593,7 @@
 		01D03CF230304F7D0029C166 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "筋トレログ Watch App/WatchApp.entitlements";
@@ -627,6 +628,7 @@
 		01D03CF330304F7D0029C166 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "筋トレログ Watch App/WatchApp.entitlements";
