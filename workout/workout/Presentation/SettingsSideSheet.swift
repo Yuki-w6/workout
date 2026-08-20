@@ -6,9 +6,16 @@ struct SettingsSideSheet: View {
     private let actionLabelColor: Color = .secondary
     @Environment(\.openURL) private var openURL
 
-    init(isPresented: Binding<Bool>, isCloudSyncEnabled: Binding<Bool>) {
+    private let onShowDeletedExercises: () -> Void
+
+    init(
+        isPresented: Binding<Bool>,
+        isCloudSyncEnabled: Binding<Bool>,
+        onShowDeletedExercises: @escaping () -> Void = {}
+    ) {
         _isPresented = isPresented
         _isCloudSyncEnabled = isCloudSyncEnabled
+        self.onShowDeletedExercises = onShowDeletedExercises
     }
 
     var body: some View {
@@ -43,6 +50,18 @@ struct SettingsSideSheet: View {
                         systemImage: "questionmark.circle",
                         urlString: "https://celestial-estimate-0db.notion.site/2e5540c9e67280dcbc80f99d961593db"
                     )
+                    Button(action: onShowDeletedExercises) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "arrow.uturn.backward")
+                                .frame(width: 22)
+                            Text("削除した種目")
+                            Spacer()
+                        }
+                        .foregroundStyle(actionLabelColor)
+                        .contentShape(Rectangle())
+                    }
+                    .tint(actionLabelColor)
+
                     cloudSyncToggle
 
                     Spacer()

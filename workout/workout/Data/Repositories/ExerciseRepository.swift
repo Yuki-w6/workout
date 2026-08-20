@@ -67,10 +67,17 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
     }
     
     func fetch(by id: UUID) throws -> Exercise? {
+        try fetchAllMatching(id).first
+    }
+
+    // CloudKitは一意制約を持たないため、同じidのレコードが複数同期され得る。
+    // 更新・アーカイブを1件にしか適用しないと、もう片方がfetchActive()で返り続けて
+    // 「削除したのに消えない・エラーも出ない」状態になるので、必ず全件に適用する。
+    private func fetchAllMatching(_ id: UUID) throws -> [Exercise] {
         let desc = FetchDescriptor<Exercise>(
             predicate: #Predicate { $0.id == id }
         )
-        return try context.fetch(desc).first
+        return try context.fetch(desc)
     }
     
     func fetchByBodyPart(_ bodyPart: BodyPart, includeArchived: Bool = false) throws -> [Exercise] {
@@ -115,40 +122,51 @@ final class SwiftDataExerciseRepository: ExerciseRepository {
     func upsert(_ exercise: Exercise) throws {
         // SwiftDataはinsert済みオブジェクトを再insertしても問題になりにくいですが、
         // 参照が別インスタンスの場合に備え、IDで既存を探して更新するのが安全。
-        if let existing = try fetch(by: exercise.id) {
-            existing.name = exercise.name
-            existing.bodyPartRaw = exercise.bodyPartRaw
-            existing.defaultWeightUnitRaw = exercise.defaultWeightUnitRaw
-            existing.isPreset = exercise.isPreset
-            existing.presetSortKey = exercise.isPreset ? 0 : 1
-            existing.seedKey = exercise.seedKey
-            existing.seedVersion = exercise.seedVersion
-            existing.isArchived = exercise.isArchived
-        } else {
+        let existing = try fetchAllMatching(exercise.id)
+        if existing.isEmpty {
             context.insert(exercise)
+        } else {
+            for target in existing {
+                target.name = exercise.name
+                target.bodyPartRaw = exercise.bodyPartRaw
+                target.defaultWeightUnitRaw = exercise.defaultWeightUnitRaw
+                target.isPreset = exercise.isPreset
+                target.presetSortKey = exercise.isPreset ? 0 : 1
+                target.seedKey = exercise.seedKey
+                target.seedVersion = exercise.seedVersion
+                // isArchivedは意図的に触らない。
+                // 削除済みの種目が更新のついでに復活するため、復活はunarchive()に限定する。
+            }
         }
         try context.save()
     }
     
     func archive(_ exerciseID: UUID) throws {
-        guard let ex = try fetch(by: exerciseID) else { return }
+        let targets = try fetchAllMatching(exerciseID)
+        guard targets.isEmpty == false else { return }
         if try hasRecords(for: exerciseID) {
             throw ExerciseRepositoryError.hasRecords
         }
-        ex.isArchived = true
+        for target in targets {
+            target.isArchived = true
+        }
         try context.save()
     }
     
     func unarchive(_ exerciseID: UUID) throws {
-        guard let ex = try fetch(by: exerciseID) else { return }
-        ex.isArchived = false
+        let targets = try fetchAllMatching(exerciseID)
+        guard targets.isEmpty == false else { return }
+        for target in targets {
+            target.isArchived = false
+        }
         try context.save()
     }
     
     func deletePermanently(_ exerciseID: UUID) throws {
         // 原則は使わない（履歴参照を壊す可能性があるため）
-        guard let ex = try fetch(by: exerciseID) else { return }
-        context.delete(ex)
+        for target in try fetchAllMatching(exerciseID) {
+            context.delete(target)
+        }
         try context.save()
     }
 

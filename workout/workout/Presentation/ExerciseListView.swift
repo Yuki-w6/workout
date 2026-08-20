@@ -19,6 +19,7 @@ struct ExerciseListView: View {
     @State private var toastMessage = ""
     @State private var isToastPresented = false
     @State private var isSettingsPresented = false
+    @State private var isDeletedExercisesPresented = false
     @State private var isSyncing = false
     @State private var navigationPath = NavigationPath()
     @State private var isNavigating = false
@@ -122,6 +123,12 @@ struct ExerciseListView: View {
                             addingBodyPart = nil
                         }
                     }
+                    .sheet(isPresented: $isDeletedExercisesPresented) {
+                        DeletedExercisesView(
+                            viewModel: viewModel,
+                            isPresented: $isDeletedExercisesPresented
+                        )
+                    }
                     .toast(message: toastMessage, isPresented: $isToastPresented)
                     .safeAreaInset(edge: .top) {
                         searchBar
@@ -154,7 +161,14 @@ struct ExerciseListView: View {
                     }
             }
 
-            SettingsSideSheet(isPresented: $isSettingsPresented, isCloudSyncEnabled: $isCloudSyncEnabled)
+            SettingsSideSheet(
+                isPresented: $isSettingsPresented,
+                isCloudSyncEnabled: $isCloudSyncEnabled,
+                onShowDeletedExercises: {
+                    isSettingsPresented = false
+                    isDeletedExercisesPresented = true
+                }
+            )
 
             if isNavigating {
                 ZStack {
@@ -323,7 +337,8 @@ struct ExerciseListView: View {
             navigationPath.append(ExerciseNavigationTarget.exercise(exercise.id))
         }
         .accessibilityAddTraits(.isButton)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+        // フルスワイプは確認なしで即削除になる。復元導線はあるが気付きにくいので明示タップを要求する。
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
                 let failedIds = viewModel.deleteExercises(ids: [exercise.id])
                 if !failedIds.isEmpty {

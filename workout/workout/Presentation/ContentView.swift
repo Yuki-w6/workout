@@ -35,6 +35,11 @@ struct ContentView: View {
                     }
                 }
         }
+        // 正規化がバックグラウンドで種目を削除しうる。再読込しないと
+        // 削除済みインスタンスを掴み続けて無効化アクセスで落ちる。
+        .onReceive(NotificationCenter.default.publisher(for: .exercisesDidNormalize)) { _ in
+            viewModel.load()
+        }
     }
 }
 
@@ -98,7 +103,9 @@ private struct ContentViewPreview: View {
             fetchExercise: FetchExerciseUseCase(repository: repository),
             addExercise: AddExerciseUseCase(repository: repository),
             updateExercise: UpdateExerciseUseCase(repository: repository),
-            deleteExercise: DeleteExerciseUseCase(repository: repository)
+            deleteExercise: DeleteExerciseUseCase(repository: repository),
+            fetchArchivedExercises: FetchArchivedExercisesUseCase(repository: repository),
+            restoreExercise: RestoreExerciseUseCase(repository: repository)
         )
 
         self.container = container

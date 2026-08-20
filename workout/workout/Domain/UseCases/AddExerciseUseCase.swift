@@ -21,7 +21,12 @@ struct AddExerciseUseCase {
         return exercise
     }
 
-    func executePreset(_ preset: PresetExerciseDefinition) -> Exercise {
+    func executePreset(_ preset: PresetExerciseDefinition) -> Exercise? {
+        // 既にレコードがあるなら触らない。
+        // upsertに流すと、ユーザーが変えた種目名や単位が定義値に巻き戻る。
+        if let existing = (try? repository.fetch(by: preset.id)) ?? nil {
+            return existing
+        }
         let exercise = Exercise(
             id: preset.id,
             name: preset.name,

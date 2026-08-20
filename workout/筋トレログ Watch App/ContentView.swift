@@ -17,11 +17,18 @@ struct ContentView: View {
         _exercises = Query(filter: predicate, sort: sortDescriptors)
     }
 
+    // CloudKitはunique constraintを持たないため、同じidのExerciseが複数同期されることがある。
+    // 実体の掃除はiPhone側が担当するが、掃除が走って同期が届くまでの間は
+    // Watchで同じ種目が重複して並んでしまうので、表示側でも畳んでおく。
+    private var uniqueExercises: [Exercise] {
+        ExerciseDeduplicator.deduplicatedByID(exercises)
+    }
+
     // 部位ごとにまとめる。BodyPart.allCasesの並び順をセクション表示順にする。
     // presetSortKey優先のクエリ結果でも、部位でグルーピングすれば同部位内は
     // プリセット→ユーザー作成の順のまま自然にまとまる。
     private var exercisesByBodyPart: [(bodyPart: BodyPart, exercises: [Exercise])] {
-        let grouped = Dictionary(grouping: exercises, by: \.bodyPart)
+        let grouped = Dictionary(grouping: uniqueExercises, by: \.bodyPart)
         return BodyPart.allCases.compactMap { bodyPart in
             guard let group = grouped[bodyPart], !group.isEmpty else { return nil }
             return (bodyPart, group)
@@ -31,7 +38,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if exercises.isEmpty {
+                if uniqueExercises.isEmpty {
                     ContentUnavailableView(
                         "種目がありません",
                         systemImage: "arrow.triangle.2.circlepath.icloud",
@@ -65,7 +72,7 @@ struct ContentView: View {
     // ダミーのRecordHeader/RecordSetを実際に作成・保存し、直後に削除することで
     // このコストをアプリ起動直後(ユーザーが種目を選ぶより前)に前倒しする。
     private func warmUpCloudKitSyncIfNeeded() {
-        guard !didWarmUpCloudKitSync, let exercise = exercises.first else { return }
+        guard !didWarmUpCloudKitSync, let exercise = uniqueExercises.first else { return }
         didWarmUpCloudKitSync = true
 
         let header = RecordHeader(date: .distantPast, exercise: exercise)
