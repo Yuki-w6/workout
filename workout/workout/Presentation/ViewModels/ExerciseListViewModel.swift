@@ -15,19 +15,25 @@ final class ExerciseListViewModel: ObservableObject {
     private let addExercise: AddExerciseUseCase
     private let updateExerciseUseCase: UpdateExerciseUseCase
     private let deleteExerciseUseCase: DeleteExerciseUseCase
+    private let fetchArchivedExercises: FetchArchivedExercisesUseCase
+    private let restoreExerciseUseCase: RestoreExerciseUseCase
 
     init(
         fetchExercises: FetchExercisesUseCase,
         fetchExercise: FetchExerciseUseCase,
         addExercise: AddExerciseUseCase,
         updateExercise: UpdateExerciseUseCase,
-        deleteExercise: DeleteExerciseUseCase
+        deleteExercise: DeleteExerciseUseCase,
+        fetchArchivedExercises: FetchArchivedExercisesUseCase,
+        restoreExercise: RestoreExerciseUseCase
     ) {
         self.fetchExercises = fetchExercises
         self.fetchExerciseUseCase = fetchExercise
         self.addExercise = addExercise
         self.updateExerciseUseCase = updateExercise
         self.deleteExerciseUseCase = deleteExercise
+        self.fetchArchivedExercises = fetchArchivedExercises
+        self.restoreExerciseUseCase = restoreExercise
     }
 
     func load() {
@@ -64,6 +70,15 @@ final class ExerciseListViewModel: ObservableObject {
         let created = addExercise.executePreset(preset)
         load()
         return created
+    }
+
+    func archivedExercises() -> [Exercise] {
+        dedupeByID(fetchArchivedExercises.execute())
+    }
+
+    func restoreExercise(id: UUID) {
+        restoreExerciseUseCase.execute(id: id)
+        load()
     }
 
     func exercise(id: UUID) -> Exercise? {

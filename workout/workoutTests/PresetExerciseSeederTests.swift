@@ -164,5 +164,7 @@ struct PresetExerciseSeederTests {
         let all = PresetExerciseDefinitions.all
         #expect(Set(all.map { $0.id }).count == all.count)
         #expect(Set(all.map { $0.seedKey }).count == all.count)
+        // 名前+部位は正規化のシグネチャとして使われる。ここが衝突すると記録の付け替え先が壊れる。
+        #expect(Set(all.map { "\($0.name)|\($0.bodyPart.rawValue)" }).count == all.count)
     }
 }

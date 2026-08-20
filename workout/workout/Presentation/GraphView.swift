@@ -1018,7 +1018,9 @@ struct GraphView: View {
         fetchExercise: FetchExerciseUseCase(repository: repository),
         addExercise: AddExerciseUseCase(repository: repository),
         updateExercise: UpdateExerciseUseCase(repository: repository),
-        deleteExercise: DeleteExerciseUseCase(repository: repository)
+        deleteExercise: DeleteExerciseUseCase(repository: repository),
+        fetchArchivedExercises: FetchArchivedExercisesUseCase(repository: repository),
+        restoreExercise: RestoreExerciseUseCase(repository: repository)
     )
 
     return GraphView(viewModel: viewModel)

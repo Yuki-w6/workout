@@ -50,7 +50,9 @@ struct workoutApp: App {
                         fetchExercise: FetchExerciseUseCase(repository: repository),
                         addExercise: AddExerciseUseCase(repository: repository),
                         updateExercise: UpdateExerciseUseCase(repository: repository),
-                        deleteExercise: DeleteExerciseUseCase(repository: repository)
+                        deleteExercise: DeleteExerciseUseCase(repository: repository),
+                        fetchArchivedExercises: FetchArchivedExercisesUseCase(repository: repository),
+                        restoreExercise: RestoreExerciseUseCase(repository: repository)
                     )
                     ZStack(alignment: .top) {
                         ContentView(viewModel: viewModel, isCloudSyncEnabled: $isCloudSyncEnabled)

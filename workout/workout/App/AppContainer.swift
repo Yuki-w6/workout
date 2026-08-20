@@ -1,15 +1,66 @@
 @preconcurrency import Foundation
+import CoreData
 import SwiftData
+import UIKit
 
 @MainActor
 final class AppContainer {
     let modelContainer: ModelContainer
     let exerciseRepository: ExerciseRepository
 
+    private var observers: [NSObjectProtocol] = []
+    private var normalizeTask: Task<Void, Never>?
+
     init(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
-        let modelContext = ModelContext(modelContainer)
-        exerciseRepository = SwiftDataExerciseRepository(context: modelContext)
+        // 正規化はmainContextで行を削除する。repositoryが別コンテキストだと、
+        // UIが握っているインスタンスだけが取り残されて無効化アクセスで落ちるため、同じコンテキストを使う。
+        exerciseRepository = SwiftDataExerciseRepository(context: modelContainer.mainContext)
+        observeStoreChanges()
+    }
+
+    deinit {
+        normalizeTask?.cancel()
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    // CloudKitのインポートは起動処理より後に届く。起動時の1回だけ正規化しても、
+    // インポート後に現れた同一IDの重複は掃除されないまま残ってしまう
+    // (iPhoneはViewModel側のdedupeByIDで畳んで表示するため気付けず、Watchでだけ重複が見える)。
+    // リモート変更とフォアグラウンド復帰のたびに正規化をやり直す。
+    private func observeStoreChanges() {
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            .NSPersistentStoreRemoteChange,
+            UIApplication.didBecomeActiveNotification
+        ]
+        observers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.scheduleNormalization()
+                }
+            }
+        }
+    }
+
+    private func scheduleNormalization() {
+        // 同期中は変更通知が連続で届くため、最後の1回にまとめる。
+        normalizeTask?.cancel()
+        normalizeTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard Task.isCancelled == false, let self else { return }
+            do {
+                let changed = try Self.normalizePresetExercisesIfNeeded(context: self.modelContainer.mainContext)
+                if changed {
+                    NotificationCenter.default.post(name: .exercisesDidNormalize, object: nil)
+                }
+            } catch {
+                // 中途半端な変更をUI用のmainContextに残さない。次の通知で再試行する。
+                self.modelContainer.mainContext.rollback()
+            }
+        }
     }
 
     static func make(useCloud: Bool) async throws -> (container: AppContainer, warningMessage: String?) {
@@ -26,14 +77,25 @@ final class AppContainer {
         }
         let modelContainer = try ModelContainer(for: schema, configurations: [configuration])
         let container = AppContainer(modelContainer: modelContainer)
-        try PresetExerciseSeeder(context: modelContainer.mainContext).seedIfNeeded()
-        try normalizePresetExercisesIfNeeded(context: modelContainer.mainContext)
-        return (container, nil)
+        // 種目の初期設定はbest-effort。ここで失敗しても既存の記録には触れないので、
+        // 起動そのものを止めてしまうと記録にアクセスできなくなる方が損害が大きい。
+        var warningMessage: String?
+        do {
+            try PresetExerciseSeeder(context: modelContainer.mainContext).seedIfNeeded()
+            _ = try normalizePresetExercisesIfNeeded(context: modelContainer.mainContext)
+        } catch {
+            modelContainer.mainContext.rollback()
+            warningMessage = "種目の初期設定に失敗しました。次回起動時に再試行します。"
+        }
+        return (container, warningMessage)
     }
 
-    private static func normalizePresetExercisesIfNeeded(context: ModelContext) throws {
+    /// 変更があった場合にtrueを返す。
+    @discardableResult
+    static func normalizePresetExercisesIfNeeded(context: ModelContext) throws -> Bool {
         var exercises = try context.fetch(FetchDescriptor<Exercise>())
-        guard exercises.isEmpty == false else { return }
+        guard exercises.isEmpty == false else { return false }
+        var didChangeAnything = false
 
         var records = try context.fetch(FetchDescriptor<RecordHeader>())
         var changed = false
@@ -64,6 +126,13 @@ final class AppContainer {
         let groupedByID = Dictionary(grouping: exercises, by: { $0.id })
         for (_, group) in groupedByID where group.count > 1 {
             let canonical = group.first { $0.isPreset || $0.seedKey != nil } ?? group[0]
+            // 残す1件はフェッチ順で決まるため、アーカイブ状態を明示的にマージしないと
+            // 未アーカイブ側が勝った瞬間に削除が巻き戻る。削除を優先する。
+            let isArchivedInGroup = group.contains { $0.isArchived }
+            if canonical.isArchived != isArchivedInGroup {
+                canonical.isArchived = isArchivedInGroup
+                changed = true
+            }
             for exercise in group where exercise !== canonical {
                 if canonical.isPreset == false && (exercise.isPreset || exercise.seedKey != nil) {
                     canonical.isPreset = exercise.isPreset
@@ -81,12 +150,19 @@ final class AppContainer {
 
         if changed {
             try context.save()
+            didChangeAnything = true
             exercises = try context.fetch(FetchDescriptor<Exercise>())
             records = try context.fetch(FetchDescriptor<RecordHeader>())
             changed = false
         }
 
-        var exerciseByID: [UUID: Exercise] = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        // 直前の重複解消で一意になっているはずだが、CloudKitのインポートは
+        // save()とfetch()の間にも割り込む。uniqueKeysWithValuesは重複キーで実行時トラップするため、
+        // 取りこぼしがあってもクラッシュしないよう先勝ちで畳む(canonicalの選び方と同じ)。
+        var exerciseByID: [UUID: Exercise] = Dictionary(
+            exercises.map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
 
         for preset in PresetExerciseDefinitions.all {
             let matches = exercises.filter {
@@ -106,7 +182,7 @@ final class AppContainer {
                     isPreset: true,
                     seedKey: preset.seedKey,
                     seedVersion: preset.seedVersion,
-                    isArchived: matches.allSatisfy { $0.isArchived }
+                    isArchived: matches.contains { $0.isArchived }
                 )
                 context.insert(created)
                 exerciseByID[preset.id] = created
@@ -114,21 +190,18 @@ final class AppContainer {
                 changed = true
             }
 
-            let shouldBeArchived = matches.allSatisfy { $0.isArchived }
+            // allSatisfyだと「1件でも未アーカイブなら復活」に倒れ、削除が取り消される。
+            let shouldBeArchived = matches.contains { $0.isArchived }
+            // name / bodyPart / defaultWeightUnit はユーザーが編集できるフィールドなので上書きしない。
+            // 正規化はリモート変更のたびに走るため、上書きすると改名や単位変更が数秒で巻き戻る。
             if canonical.isPreset == false ||
                 canonical.seedKey != preset.seedKey ||
                 canonical.seedVersion != preset.seedVersion ||
-                canonical.name != preset.name ||
-                canonical.bodyPartRaw != preset.bodyPart.rawValue ||
-                canonical.defaultWeightUnitRaw != preset.defaultWeightUnit.rawValue ||
                 canonical.presetSortKey != 0 ||
                 canonical.isArchived != shouldBeArchived {
                 canonical.isPreset = true
                 canonical.seedKey = preset.seedKey
                 canonical.seedVersion = preset.seedVersion
-                canonical.name = preset.name
-                canonical.bodyPartRaw = preset.bodyPart.rawValue
-                canonical.defaultWeightUnitRaw = preset.defaultWeightUnit.rawValue
                 canonical.presetSortKey = 0
                 canonical.isArchived = shouldBeArchived
                 changed = true
@@ -143,10 +216,13 @@ final class AppContainer {
         }
 
         // レコードの参照先が間違っている場合の修正（プリセット同士の誤結合だけ直す）
+        // 定義が一意であることは PresetExerciseSeederTests で担保する。
+        // 万一重複してもここで起動時クラッシュにはしない。
         let presetBySignature: [String: PresetExerciseDefinition] = Dictionary(
-            uniqueKeysWithValues: PresetExerciseDefinitions.all.map {
+            PresetExerciseDefinitions.all.map {
                 ("\($0.name)|\($0.bodyPart.rawValue)", $0)
-            }
+            },
+            uniquingKeysWith: { first, _ in first }
         )
         for header in records {
             guard let linked = header.exercise, linked.isPreset else { continue }
@@ -162,6 +238,15 @@ final class AppContainer {
 
         if changed {
             try context.save()
+            didChangeAnything = true
         }
+
+        return didChangeAnything
     }
+}
+
+extension Notification.Name {
+    /// 正規化で種目に変更が入ったことを通知する。
+    /// 画面はこれを受けて再読込しないと、削除済みインスタンスを掴み続けて無効化アクセスで落ちる。
+    static let exercisesDidNormalize = Notification.Name("exercisesDidNormalize")
 }
