@@ -17,9 +17,14 @@ enum ScreenshotSampleData {
     private static let weeks = 26
 
     /// 撮りたい画面ごとに、今日の記録の有無を出し分ける。
-    /// - 記録一覧・カレンダーは今日の記録が入っていた方が画面が埋まる。
-    /// - 逆に入力画面の「前回の重量が最初から入っている」を見せるには、
-    ///   その種目が今日まだ未記録である必要がある。
+    /// 週3回の分割法として組む。全種目を同じ曜日に置くとカレンダーの点が一列に並び、
+    /// 一目で作り物とわかってしまうため、部位ごとに曜日をずらす。
+    ///
+    /// 曜日は固定せず「今日から何日前か」で決める。撮影日が何曜日でも
+    /// 次の2つが必ず成り立つようにするため:
+    /// - 脚の日(dayOffsetInWeek = 0)は今日に当たる → 記録一覧とカレンダーが埋まる
+    /// - 胸の日(dayOffsetInWeek = 5)は今日に当たらない → 入力画面で
+    ///   「前回の重量が最初から入っている」状態を撮れる
     private struct Plan {
         let seedKey: String
         let startWeight: Double
@@ -27,17 +32,21 @@ enum ScreenshotSampleData {
         let weeklyGain: Double
         /// セットごとの回数。要素数がそのままセット数になる。
         let reps: [Int]
-        let recordsToday: Bool
+        /// その週のトレーニング日を、今日から何日前に置くか。同じ値の種目は同じ日にやる。
+        let dayOffsetInWeek: Int
     }
 
     private static let plans: [Plan] = [
-        // 入力画面のサジェスト撮影用。今日はまだ記録していない状態にする。
-        Plan(seedKey: "bench_press", startWeight: 40, weeklyGain: 1.2, reps: [10, 8, 6], recordsToday: false),
-        Plan(seedKey: "squat", startWeight: 50, weeklyGain: 1.6, reps: [10, 8, 8], recordsToday: true),
-        Plan(seedKey: "deadlift", startWeight: 60, weeklyGain: 1.8, reps: [8, 6, 5], recordsToday: true),
-        Plan(seedKey: "lat_pulldown", startWeight: 35, weeklyGain: 0.9, reps: [12, 10, 8], recordsToday: true),
-        Plan(seedKey: "shoulder_press", startWeight: 20, weeklyGain: 0.6, reps: [12, 10, 8], recordsToday: false),
-        Plan(seedKey: "arm_curl", startWeight: 10, weeklyGain: 0.4, reps: [15, 12, 10], recordsToday: false)
+        // 脚の日(今日)
+        Plan(seedKey: "squat", startWeight: 50, weeklyGain: 1.6, reps: [10, 8, 8], dayOffsetInWeek: 0),
+        Plan(seedKey: "leg_press", startWeight: 70, weeklyGain: 2.0, reps: [12, 10, 10], dayOffsetInWeek: 0),
+        // 背中の日(2日前)
+        Plan(seedKey: "deadlift", startWeight: 60, weeklyGain: 1.8, reps: [8, 6, 5], dayOffsetInWeek: 2),
+        Plan(seedKey: "lat_pulldown", startWeight: 35, weeklyGain: 0.9, reps: [12, 10, 8], dayOffsetInWeek: 2),
+        // 胸・肩・腕の日(5日前)。入力画面のサジェスト撮影はこの日の種目で行う。
+        Plan(seedKey: "bench_press", startWeight: 40, weeklyGain: 1.2, reps: [10, 8, 6], dayOffsetInWeek: 5),
+        Plan(seedKey: "shoulder_press", startWeight: 20, weeklyGain: 0.6, reps: [12, 10, 8], dayOffsetInWeek: 5),
+        Plan(seedKey: "arm_curl", startWeight: 10, weeklyGain: 0.4, reps: [15, 12, 10], dayOffsetInWeek: 5)
     ]
 
     static var isRequested: Bool {
@@ -76,10 +85,8 @@ enum ScreenshotSampleData {
             // 古い週から順に作る。SetProgressionPredictorは直近セッションとの差分を見るため、
             // 日付の並びが崩れているとサジェストが不自然になる。
             for weeksAgo in stride(from: weeks, through: 0, by: -1) {
-                if weeksAgo == 0 && !plan.recordsToday {
-                    continue
-                }
-                guard let date = calendar.date(byAdding: .day, value: -weeksAgo * 7, to: today) else {
+                let daysAgo = weeksAgo * 7 + plan.dayOffsetInWeek
+                guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else {
                     continue
                 }
                 let elapsedWeeks = Double(weeks - weeksAgo)
