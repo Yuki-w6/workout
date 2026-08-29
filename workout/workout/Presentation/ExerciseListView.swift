@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 struct ExerciseListView: View {
     private enum ExerciseNavigationTarget: Hashable {
@@ -23,7 +24,11 @@ struct ExerciseListView: View {
     @State private var isSyncing = false
     @State private var navigationPath = NavigationPath()
     @State private var isNavigating = false
+    @AppStorage("recordSaveCount") private var recordSaveCount = 0
+    @AppStorage("hasRequestedReview") private var hasRequestedReview = false
+    @Environment(\.requestReview) private var requestReview
     @FocusState private var isSearchFocused: Bool
+    private let reviewRequestPolicy = ReviewRequestPolicy()
     private let bannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "BannerAdUnitID") as? String
     private var actionLabelColor: Color { .secondary }
 
@@ -152,6 +157,7 @@ struct ExerciseListView: View {
                                 initialDate: nil,
                                 onSave: { message in
                                     showToast(message)
+                                    requestReviewIfNeeded()
                                 }
                             )
                             .onAppear {
@@ -408,6 +414,25 @@ struct ExerciseListView: View {
         toastMessage = message
         withAnimation(.easeInOut(duration: 0.2)) {
             isToastPresented = true
+        }
+    }
+
+    /// 新しい記録が保存できた直後にだけ呼ぶ。
+    /// 保存直後は詳細画面のdismissとトーストが重なるため、それが収まってから出す。
+    private func requestReviewIfNeeded() {
+        recordSaveCount += 1
+        guard reviewRequestPolicy.shouldRequest(
+            saveCount: recordSaveCount,
+            hasRequested: hasRequestedReview
+        ) else {
+            return
+        }
+        // 依頼を出せたかはAppleに委ねられ、こちらからは分からない。
+        // 出そうと試みた時点で立てておかないと、毎回の保存で試み続けることになる。
+        hasRequestedReview = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            requestReview()
         }
     }
 
