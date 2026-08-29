@@ -83,6 +83,9 @@ final class AppContainer {
         do {
             try PresetExerciseSeeder(context: modelContainer.mainContext).seedIfNeeded()
             _ = try normalizePresetExercisesIfNeeded(context: modelContainer.mainContext)
+            // スクリーンショット撮影用。種目が揃ってからでないと記録を紐付けられないので、
+            // プリセットの初期設定より後に置く。
+            try ScreenshotSampleData.seedIfNeeded(in: modelContainer.mainContext)
         } catch {
             modelContainer.mainContext.rollback()
             warningMessage = "種目の初期設定に失敗しました。次回起動時に再試行します。"
