@@ -9,7 +9,7 @@ struct BannerAdView: UIViewRepresentable {
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitID
         bannerView.rootViewController = rootViewController()
-        bannerView.load(Request())
+        bannerView.load(AdRequestFactory.makeRequest())
         return bannerView
     }
 

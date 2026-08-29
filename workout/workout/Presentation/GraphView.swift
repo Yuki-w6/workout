@@ -374,9 +374,9 @@ struct GraphView: View {
                         x: .value("日付", xValue),
                         y: .value("値", point.value)
                     )
-                    .foregroundStyle(Color.appPink)
+                    .foregroundStyle(Color.appAccent)
                     .lineStyle(StrokeStyle(lineWidth: 2))
-                    .foregroundStyle(Color.appPink)
+                    .foregroundStyle(Color.appAccent)
                     .symbol(.circle.strokeBorder(lineWidth: 2))
                     .interpolationMethod(.linear)
                 }
@@ -390,7 +390,7 @@ struct GraphView: View {
                         y: .value("値", point.value)
                     )
                     .symbolSize(80)
-                    .foregroundStyle(Color.appPink)
+                    .foregroundStyle(Color.appAccent)
                     .zIndex(2)
                 }
             }

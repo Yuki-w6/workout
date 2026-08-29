@@ -122,7 +122,7 @@ private struct RecordEntryPage: View {
                     saveTargetSet()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.actionOrange)
+                .tint(.actionAccent)
                 .padding(.top, 20)
             }
             .padding(.horizontal)
@@ -320,7 +320,8 @@ private struct SavedSetsPage: View {
 
 extension Color {
     // iOS本体(workoutApp.swift)のアプリカラーと合わせたオレンジ。
-    static let actionOrange = Color(red: 0.992, green: 0.294, blue: 0.004)
+    /// アプリのアクセントカラー #007AFF。iPhone側のColor.appAccentと同じ値。
+    static let actionAccent = Color(red: 0.0, green: 0.478, blue: 1.0)
 }
 
 private func formatted(_ value: Double) -> String {
