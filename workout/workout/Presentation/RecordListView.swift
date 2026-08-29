@@ -174,14 +174,14 @@ private struct CalendarMonthView: View {
                             VStack(spacing: 4) {
                                 Text("\(calendar.component(.day, from: date))")
                                     .font(.subheadline)
-                                    .foregroundStyle(isToday ? Color.appPink : Color.primary)
+                                    .foregroundStyle(isToday ? Color.appAccent : Color.primary)
                                     .frame(maxWidth: .infinity)
                                 Circle()
-                                    .fill(isMarked ? Color.appPink : Color.clear)
+                                    .fill(isMarked ? Color.appAccent : Color.clear)
                                     .frame(width: 4, height: 4)
                             }
                             .padding(6)
-                            .background(isSelected ? Color.appPink.opacity(0.15) : Color.clear)
+                            .background(isSelected ? Color.appAccent.opacity(0.15) : Color.clear)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                         .buttonStyle(.plain)

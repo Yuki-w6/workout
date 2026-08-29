@@ -1,5 +1,6 @@
 import SwiftUI
 
 extension Color {
-    static let appPink = Color(red: 0.992, green: 0.294, blue: 0.004)
+    /// アプリのアクセントカラー #007AFF。iOSのシステムブルーに合わせている。
+    static let appAccent = Color(red: 0.0, green: 0.478, blue: 1.0)
 }
