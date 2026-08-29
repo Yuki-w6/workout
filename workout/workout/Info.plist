@@ -10,6 +10,8 @@
 	<string>$(DISABLE_ADS)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-1976866996688533~6909684310</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>GraphBannerAdUnitID</key>
 	<string>$(GRAPH_BANNER_AD_UNIT_ID)</string>
 	<key>RecordListBannerAdUnitID</key>
