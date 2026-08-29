@@ -115,7 +115,7 @@ struct NativeAdCardView: UIViewRepresentable {
                 options: nil
             )
             adLoader?.delegate = self
-            adLoader?.load(Request())
+            adLoader?.load(AdRequestFactory.makeRequest())
             didLoad = true
         }
 

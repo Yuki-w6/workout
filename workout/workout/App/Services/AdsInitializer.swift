@@ -17,6 +17,7 @@ final class AdsInitializer: ObservableObject {
         guard AdPolicy.isAdEnabled else { return }
         
         hasStartedSDKs = true
+        AdRequestFactory.configure()
         MobileAds.shared.start(completionHandler: { _ in })
     }
 }
