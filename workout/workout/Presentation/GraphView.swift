@@ -8,6 +8,10 @@ struct GraphView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
     @Query(sort: \RecordHeader.date) private var records: [RecordHeader]
 
+    /// 詳細画面と同じ枠を使う。一覧と詳細で別々の枠にすると
+    /// AdMob側の枠追加とCI設定の追加が要るわりに、得られるのは集計の細かさだけ。
+    private let graphBannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "GraphBannerAdUnitID") as? String
+
     private let bodyPartOrder: [BodyPart] = [
         .chest,
         .back,
@@ -36,6 +40,14 @@ struct GraphView: View {
             .navigationTitle("グラフ")
             .navigationBarTitleDisplayMode(.inline)
         }
+        .safeAreaInset(edge: .bottom) {
+            if AdPolicy.shouldShowBanner(adUnitID: graphBannerAdUnitID), let adUnitID = graphBannerAdUnitID {
+                BannerAdView(adUnitID: adUnitID)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .padding(.horizontal, 16)
+            }
+        }
         .onAppear {
             viewModel.load()
         }
@@ -55,7 +67,13 @@ struct GraphView: View {
                             VStack(spacing: 0) {
                                 ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                                     NavigationLink {
-                                        ExerciseGraphView(exercise: exercise)
+                                        // 遷移時に値を写し取る。詳細画面が開いている間に
+                                        // 種目が削除されても、画面が無効なインスタンスに触れない。
+                                        ExerciseGraphView(
+                                            exerciseID: exercise.id,
+                                            exerciseName: exercise.name,
+                                            weightUnit: exercise.defaultWeightUnit
+                                        )
                                     } label: {
                                         HStack {
                                             Text(exercise.name)
@@ -92,11 +110,6 @@ struct GraphView: View {
     /// 記録が1件でもある種目だけを出す。
     /// 未記録の種目を出すと、タップした先が空のグラフになって空振りするため。
     private var recordedExercises: [Exercise] {
-        let idsWithRecords = Set(
-            records
-                .filter { $0.hasRecordedSets }
-                .map(\.exerciseIDSnapshot)
-        )
-        return viewModel.exercises.filter { idsWithRecords.contains($0.id) }
+        RecordedExerciseFilter.exercisesWithRecords(exercises: viewModel.exercises, records: records)
     }
 }
