@@ -9,7 +9,9 @@ struct ExerciseGraphView: View {
     let exercise: Exercise
 
     @Query(sort: \RecordHeader.date) private var records: [RecordHeader]
-    @State private var selectedPeriod: GraphPeriod = .oneWeek
+    /// 期間は前回選んだものを覚える。初回は3か月。
+    /// 週だと点が数個しか並ばず伸びが読み取れず、年だと直近の変化が潰れるため。
+    @AppStorage("lastGraphPeriod") private var lastGraphPeriodRaw = GraphPeriod.threeMonths.rawValue
 
     private let calendar = Calendar.japaneseLocale
     private let graphBannerAdUnitID: String? = Bundle.main.object(forInfoDictionaryKey: "GraphBannerAdUnitID") as? String
@@ -20,7 +22,7 @@ struct ExerciseGraphView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                Picker("期間", selection: $selectedPeriod) {
+                Picker("期間", selection: periodSelection) {
                     ForEach(GraphPeriod.allCases) { period in
                         Text(period.title).tag(period)
                     }
@@ -57,6 +59,17 @@ struct ExerciseGraphView: View {
                     .padding(.horizontal, 16)
             }
         }
+    }
+
+    private var selectedPeriod: GraphPeriod {
+        GraphPeriod(rawValue: lastGraphPeriodRaw) ?? .threeMonths
+    }
+
+    private var periodSelection: Binding<GraphPeriod> {
+        Binding(
+            get: { selectedPeriod },
+            set: { lastGraphPeriodRaw = $0.rawValue }
+        )
     }
 
     private var displayUnitLabel: String {
