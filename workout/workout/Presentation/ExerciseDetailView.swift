@@ -61,7 +61,6 @@ struct ExerciseDetailView: View {
     private enum FocusField: Hashable {
         case weight(Int)
         case reps(Int)
-        case memo(Int)
     }
 
     private var currentExercise: Exercise? {
@@ -73,12 +72,6 @@ struct ExerciseDetailView: View {
     }
 
     private var focusableFields: [FocusField] {
-        sets.indices.flatMap { index in
-            [.weight(index), .reps(index), .memo(index)]
-        }
-    }
-
-    private var focusableFieldsWithoutMemo: [FocusField] {
         sets.indices.flatMap { index in
             [.weight(index), .reps(index)]
         }
@@ -329,7 +322,7 @@ struct ExerciseDetailView: View {
     }
 
     private func focusNextField() {
-        let fields = fieldsForNavigation(from: focusedField)
+        let fields = focusableFields
         guard !fields.isEmpty else {
             return
         }
@@ -356,7 +349,7 @@ struct ExerciseDetailView: View {
     }
 
     private func focusPreviousField() {
-        let fields = fieldsForNavigation(from: focusedField)
+        let fields = focusableFields
         guard let current = focusedField,
               let index = fields.firstIndex(of: current) else {
             return
@@ -374,25 +367,13 @@ struct ExerciseDetailView: View {
 
     private func focusedSetIndex(from focusField: FocusField) -> Int {
         switch focusField {
-        case .weight(let index), .reps(let index), .memo(let index):
+        case .weight(let index), .reps(let index):
             return index
         }
     }
 
     private func setRowID(_ index: Int) -> String {
         "set-row-\(index)"
-    }
-
-    private func fieldsForNavigation(from focusField: FocusField?) -> [FocusField] {
-        guard let focusField else {
-            return focusableFieldsWithoutMemo
-        }
-        switch focusField {
-        case .memo:
-            return focusableFields
-        case .weight, .reps:
-            return focusableFieldsWithoutMemo
-        }
     }
 
     private func selectAllIfNeeded(for focusField: FocusField?) {
@@ -404,8 +385,6 @@ struct ExerciseDetailView: View {
             DispatchQueue.main.async {
                 UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
             }
-        case .memo:
-            break
         }
     }
 
@@ -487,72 +466,74 @@ private extension ExerciseDetailView {
                 .textCase(.none)
             }
             .padding(.horizontal, 4)
-            VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array($sets.enumerated()), id: \.element.id) { index, $set in
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("セット \(index + 1)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 16) {
-                        TextField("重さ", text: $set.weight)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(minWidth: 72)
-                            .recordInputStyle()
-                            .submitLabel(.next)
-                            .onSubmit { focusNextField() }
-                            .focused($focusedField, equals: .weight(index))
-                        Text(unit.rawValue)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 28, alignment: .leading)
-                        TextField("回数", text: $set.reps)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(minWidth: 72)
-                            .recordInputStyle()
-                            .submitLabel(.next)
-                            .onSubmit { focusNextField() }
-                            .focused($focusedField, equals: .reps(index))
-                        Text("回")
-                            .foregroundStyle(.secondary)
-                    }
-                    TextField("メモ", text: $set.memo)
-                        .textInputAutocapitalization(.never)
-                        .recordInputStyle()
-                        .submitLabel(.next)
-                        .onSubmit { focusNextField() }
-                        .focused($focusedField, equals: .memo(index))
-                }
-                .padding(.vertical, 6)
-                .id(setRowID(index))
-                if index < sets.count - 1 {
+
+            VStack(spacing: 0) {
+                ForEach(Array($sets.enumerated()), id: \.element.id) { index, $set in
+                    setRow(index: index, set: $set)
+                        .id(setRowID(index))
                     Divider()
+                        .padding(.leading, 16)
+                }
+                Button {
+                    sets.append(ExerciseSetInput())
+                    let newIndex = max(sets.count - 1, 0)
+                    DispatchQueue.main.async {
+                        focusedField = .weight(newIndex)
+                    }
+                } label: {
+                    Label("セットを追加", systemImage: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 14)
+                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
                 }
             }
-            Button {
-                sets.append(ExerciseSetInput())
-                let newIndex = max(sets.count - 1, 0)
-                DispatchQueue.main.async {
-                    focusedField = .weight(newIndex)
-                }
-            } label: {
-                Label("セットを追加", systemImage: "plus")
-            }
-            .padding(.top, 4)
-            }
-            .padding(12)
             .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
-}
 
-private extension Calendar {
-    static var japaneseLocale: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = Locale(identifier: "ja_JP")
-        return calendar
+    /// 1セットを1行に収める。重量・回数を横に並べ、メモは既定で畳む。
+    /// 3つの入力欄を縦に積むと1セットで画面の1/4を使い、
+    /// キーパッドを出すと2セット目以降が見えなくなるため。
+    @ViewBuilder
+    func setRow(index: Int, set: Binding<ExerciseSetInput>) -> some View {
+        HStack(spacing: 10) {
+            Text("\(index + 1)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 18, alignment: .leading)
+            Spacer(minLength: 0)
+            TextField("—", text: set.weight)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .font(.title3.weight(.semibold))
+                .frame(width: 86)
+                .submitLabel(.next)
+                .onSubmit { focusNextField() }
+                .focused($focusedField, equals: .weight(index))
+            Text(unit.rawValue)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(width: 26, alignment: .leading)
+            TextField("—", text: set.reps)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .font(.title3.weight(.semibold))
+                .frame(width: 54)
+                .submitLabel(.next)
+                .onSubmit { focusNextField() }
+                .focused($focusedField, equals: .reps(index))
+            Text("回")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(width: 20, alignment: .leading)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
     }
+
 }
 
 private struct ExerciseSetInput: Identifiable {
@@ -587,22 +568,6 @@ private struct ExerciseSetInput: Identifiable {
 
     static func defaultSets() -> [ExerciseSetInput] {
         (0..<3).map { _ in ExerciseSetInput() }
-    }
-}
-
-private struct RecordInputFieldModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(Color(.tertiarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-private extension View {
-    func recordInputStyle() -> some View {
-        modifier(RecordInputFieldModifier())
     }
 }
 
