@@ -23,8 +23,6 @@ struct ExerciseDetailView: View {
     @State private var isOverwriteAlertPresented = false
     @State private var pendingSaveDate: Date?
     @State private var isDatePickerPresented = false
-    /// メモ欄を開いているセット。行を短く保つため、既定では畳んでおく。
-    @State private var expandedMemoSetIDs: Set<UUID> = []
     @FocusState private var focusedField: FocusField?
     @AppStorage("lastWeightUnit") private var lastWeightUnitRaw = WeightUnit.kg.rawValue
 
@@ -63,7 +61,6 @@ struct ExerciseDetailView: View {
     private enum FocusField: Hashable {
         case weight(Int)
         case reps(Int)
-        case memo(Int)
     }
 
     private var currentExercise: Exercise? {
@@ -75,36 +72,6 @@ struct ExerciseDetailView: View {
     }
 
     private var focusableFields: [FocusField] {
-        sets.indices.flatMap { index -> [FocusField] in
-            var fields: [FocusField] = [.weight(index), .reps(index)]
-            // 畳まれているメモ欄はビューが存在しないので、送り先に含めない。
-            if isMemoVisible(at: index) {
-                fields.append(.memo(index))
-            }
-            return fields
-        }
-    }
-
-    private func isMemoVisible(at index: Int) -> Bool {
-        guard sets.indices.contains(index) else {
-            return false
-        }
-        let set = sets[index]
-        return expandedMemoSetIDs.contains(set.id) || !set.memo.isEmpty
-    }
-
-    private func toggleMemo(for id: UUID, at index: Int) {
-        if expandedMemoSetIDs.contains(id) {
-            expandedMemoSetIDs.remove(id)
-        } else {
-            expandedMemoSetIDs.insert(id)
-            DispatchQueue.main.async {
-                focusedField = .memo(index)
-            }
-        }
-    }
-
-    private var focusableFieldsWithoutMemo: [FocusField] {
         sets.indices.flatMap { index in
             [.weight(index), .reps(index)]
         }
@@ -355,7 +322,7 @@ struct ExerciseDetailView: View {
     }
 
     private func focusNextField() {
-        let fields = fieldsForNavigation(from: focusedField)
+        let fields = focusableFields
         guard !fields.isEmpty else {
             return
         }
@@ -382,7 +349,7 @@ struct ExerciseDetailView: View {
     }
 
     private func focusPreviousField() {
-        let fields = fieldsForNavigation(from: focusedField)
+        let fields = focusableFields
         guard let current = focusedField,
               let index = fields.firstIndex(of: current) else {
             return
@@ -400,25 +367,13 @@ struct ExerciseDetailView: View {
 
     private func focusedSetIndex(from focusField: FocusField) -> Int {
         switch focusField {
-        case .weight(let index), .reps(let index), .memo(let index):
+        case .weight(let index), .reps(let index):
             return index
         }
     }
 
     private func setRowID(_ index: Int) -> String {
         "set-row-\(index)"
-    }
-
-    private func fieldsForNavigation(from focusField: FocusField?) -> [FocusField] {
-        guard let focusField else {
-            return focusableFieldsWithoutMemo
-        }
-        switch focusField {
-        case .memo:
-            return focusableFields
-        case .weight, .reps:
-            return focusableFieldsWithoutMemo
-        }
     }
 
     private func selectAllIfNeeded(for focusField: FocusField?) {
@@ -430,8 +385,6 @@ struct ExerciseDetailView: View {
             DispatchQueue.main.async {
                 UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
             }
-        case .memo:
-            break
         }
     }
 
@@ -546,57 +499,36 @@ private extension ExerciseDetailView {
     /// キーパッドを出すと2セット目以降が見えなくなるため。
     @ViewBuilder
     func setRow(index: Int, set: Binding<ExerciseSetInput>) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Text("\(index + 1)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 18, alignment: .leading)
-                Spacer(minLength: 0)
-                TextField("—", text: set.weight)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 86)
-                    .submitLabel(.next)
-                    .onSubmit { focusNextField() }
-                    .focused($focusedField, equals: .weight(index))
-                Text(unit.rawValue)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 26, alignment: .leading)
-                TextField("—", text: set.reps)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 54)
-                    .submitLabel(.next)
-                    .onSubmit { focusNextField() }
-                    .focused($focusedField, equals: .reps(index))
-                Text("回")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20, alignment: .leading)
-                Button {
-                    toggleMemo(for: set.wrappedValue.id, at: index)
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                        .font(.subheadline)
-                        .foregroundStyle(isMemoVisible(at: index) ? Color.appAccent : Color.secondary)
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("セット\(index + 1)のメモ")
-            }
-            if isMemoVisible(at: index) {
-                TextField("メモ", text: set.memo)
-                    .textInputAutocapitalization(.never)
-                    .font(.subheadline)
-                    .recordInputStyle()
-                    .submitLabel(.done)
-                    .focused($focusedField, equals: .memo(index))
-            }
+        HStack(spacing: 10) {
+            Text("\(index + 1)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 18, alignment: .leading)
+            Spacer(minLength: 0)
+            TextField("—", text: set.weight)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .font(.title3.weight(.semibold))
+                .frame(width: 86)
+                .submitLabel(.next)
+                .onSubmit { focusNextField() }
+                .focused($focusedField, equals: .weight(index))
+            Text(unit.rawValue)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(width: 26, alignment: .leading)
+            TextField("—", text: set.reps)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .font(.title3.weight(.semibold))
+                .frame(width: 54)
+                .submitLabel(.next)
+                .onSubmit { focusNextField() }
+                .focused($focusedField, equals: .reps(index))
+            Text("回")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(width: 20, alignment: .leading)
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
@@ -636,22 +568,6 @@ private struct ExerciseSetInput: Identifiable {
 
     static func defaultSets() -> [ExerciseSetInput] {
         (0..<3).map { _ in ExerciseSetInput() }
-    }
-}
-
-private struct RecordInputFieldModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(Color(.tertiarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-private extension View {
-    func recordInputStyle() -> some View {
-        modifier(RecordInputFieldModifier())
     }
 }
 
