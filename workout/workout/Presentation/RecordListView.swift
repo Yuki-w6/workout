@@ -259,10 +259,3 @@ private struct RecordSection: View {
         }
     }
 }
-private extension Calendar {
-    static var japaneseLocale: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = Locale(identifier: "ja_JP")
-        return calendar
-    }
-}
