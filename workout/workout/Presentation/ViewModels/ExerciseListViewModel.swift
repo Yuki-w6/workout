@@ -1,8 +1,20 @@
 import Foundation
+import SwiftData
 
 @MainActor
 final class ExerciseListViewModel: ObservableObject {
-    @Published private(set) var exercises: [Exercise] = []
+    @Published private(set) var loadedExercises: [Exercise] = []
+
+    /// ❗ 画面に渡す前に、削除済みのインスタンスを必ず外す。
+    ///
+    /// AppContainerは「アプリがアクティブに戻ったとき」と「リモート変更が届いたとき」に
+    /// 重複した種目を削除する。削除はこの配列に反映されないため、load()し直すまでの間、
+    /// 配列には無効になったインスタンスが残る。そこに画面が触れるとSwiftDataが停止する。
+    ///
+    /// 触る側(一覧・グラフ・検索)を1つずつ直すと必ず取りこぼすので、配る側で1回だけ弾く。
+    var exercises: [Exercise] {
+        loadedExercises.filter { !$0.isDeleted && $0.modelContext != nil }
+    }
 
     // プリセット行の抑止判定はアーカイブ済みも含めて行う。
     // アクティブな種目だけで判定すると、削除した種目が「未作成のプリセット」として
@@ -37,7 +49,7 @@ final class ExerciseListViewModel: ObservableObject {
     }
 
     func load() {
-        exercises = dedupeByID(fetchExercises.execute())
+        loadedExercises = dedupeByID(fetchExercises.execute())
 
         let allExercises = fetchExercises.execute(includeArchived: true)
         materializedPresetIDs = Set(allExercises.filter { $0.isPreset }.map { $0.id })

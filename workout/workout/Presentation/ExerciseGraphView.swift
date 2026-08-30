@@ -6,7 +6,15 @@ import Charts
 /// 指標のセレクターは持たず、最大重量 → 推定1RM → 総負荷量 の順に並べる。
 /// 期間だけは画面上部に1つ置き、3つのグラフに共通で効かせる。
 struct ExerciseGraphView: View {
-    let exercise: Exercise
+    /// ❗ Exercise をそのまま持たない。
+    ///
+    /// AppContainerは「アプリがアクティブに戻ったとき」に重複した種目を削除する。
+    /// 全画面広告を閉じるとアクティブに戻るため、この画面を開いている最中に
+    /// 握っているインスタンスが無効化され、プロパティに触れた時点で停止していた。
+    /// 必要なのはid・名前・単位の3つだけなので、遷移時に値で受け取る。
+    let exerciseID: UUID
+    let exerciseName: String
+    let weightUnit: WeightUnit
 
     @Query(sort: \RecordHeader.date) private var records: [RecordHeader]
     /// 期間は前回選んだものを覚える。初回は3か月。
@@ -49,7 +57,7 @@ struct ExerciseGraphView: View {
             .padding()
         }
         .coordinateSpace(name: "GraphViewSpace")
-        .navigationTitle(exercise.name)
+        .navigationTitle(exerciseName)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             if AdPolicy.shouldShowBanner(adUnitID: graphBannerAdUnitID), let adUnitID = graphBannerAdUnitID {
@@ -73,7 +81,7 @@ struct ExerciseGraphView: View {
     }
 
     private var displayUnitLabel: String {
-        exercise.defaultWeightUnit.rawValue
+        weightUnit.rawValue
     }
 
     private func points(for metric: GraphMetric, in metrics: MetricPoints) -> [MetricPoint] {
@@ -107,7 +115,7 @@ struct ExerciseGraphView: View {
 
     private var recordRange: ClosedRange<Date>? {
         let dates = records
-            .filter { $0.exerciseIDSnapshot == exercise.id && $0.hasRecordedSets }
+            .filter { $0.exerciseIDSnapshot == exerciseID && $0.hasRecordedSets }
             .map { calendar.startOfDay(for: $0.date) }
         guard let minDate = dates.min(), let maxDate = dates.max() else {
             return nil
@@ -118,9 +126,9 @@ struct ExerciseGraphView: View {
 
 
     private var metricPoints: MetricPoints {
-        let unit = exercise.defaultWeightUnit
+        let unit = weightUnit
         let filtered = records.filter { record in
-            record.exerciseIDSnapshot == exercise.id
+            record.exerciseIDSnapshot == exerciseID
         }
         let grouped = Dictionary(grouping: filtered, by: { record in
             calendar.startOfDay(for: record.date)
